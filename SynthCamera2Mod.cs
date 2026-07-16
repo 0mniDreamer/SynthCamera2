@@ -3,12 +3,37 @@ using System.Collections.Generic;
 using MelonLoader;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.3.0", "OmniDreamer")]
+[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.4.1", "OmniDreamer")]
 [assembly: MelonGame(null, null)]
 
 namespace SynthCamera2
 {
-    // SynthCamera2 v0.3.0 (2026-07-14)
+    // SynthCamera2 v0.4.1 (2026-07-14)
+    //
+    // v0.4.1 changes:
+    //   - FIX: gizmos were invisible. CreatePrimitive's built-in Standard
+    //     material is stripped from URP IL2CPP builds (observed 2026-07-14,
+    //     Unity 6 branch; same failure class as the emote-rain quad meshes).
+    //     Gizmo materials now use a runtime-resolved shader from candidates
+    //     (URP/Unlit first).
+    //   - XR input diagnostics: debug log on first controller detection per
+    //     hand; one-time warning if no valid hand devices after 10s (the
+    //     previous silent-failure hole); debug log on grip press showing
+    //     distance to nearest camera vs grab radius.
+    //   - Build fixes baked in: MelonLoader.Utils usings (MelonEnvironment),
+    //     UnityEngine.PhysicsModule reference (Collider).
+    //
+    // v0.4.0 changes:
+    //   - VR grab-and-place: Static cameras show a camera-shaped gizmo on the
+    //     HMDViewOnly layer (visible in headset, never on stream; our cameras
+    //     now always strip HMDViewOnly from their masks). Squeeze grip within
+    //     GrabRadius to grab; release to place. New pose is written back to
+    //     cameras.json automatically. Menus only by default (AllowGrabInGame
+    //     preference enables mid-song grabbing). External cameras excluded
+    //     (calibration-locked); FirstPerson excluded (follows head).
+    //   - Controller input via UnityEngine.XR InputDevices (XRModule interop)
+    //     -- the one path not probe-validated; guarded so a failure disables
+    //     grab for the session with a single warning. Report if seen.
     //
     // v0.3.0 changes:
     //   - "External" camera type: pose/fov/clip loaded from an
@@ -74,9 +99,14 @@ namespace SynthCamera2
         private MelonPreferences_Category _cfg;
         private MelonPreferences_Entry<bool> _debugLogging;
         private MelonPreferences_Entry<int> _rebuildDelayFrames;
+        private MelonPreferences_Entry<bool> _enableGrab;
+        private MelonPreferences_Entry<bool> _allowGrabInGame;
+        private MelonPreferences_Entry<float> _grabRadius;
 
         private CameraConfigFile _cameraConfig;
         private readonly List<ManagedCamera> _cameras = new List<ManagedCamera>();
+        private readonly GrabManager _grab = new GrabManager();
+        private Transform _rigCached;
 
         private int _framesUntilRebuild = -1;
         private bool _masterEnabled = true;
@@ -88,10 +118,16 @@ namespace SynthCamera2
             _debugLogging = _cfg.CreateEntry<bool>("DebugLogging", false);
             _rebuildDelayFrames = _cfg.CreateEntry<int>("RebuildDelayFrames", 150,
                 null, "Frames after scene load before cameras are (re)built.");
+            _enableGrab = _cfg.CreateEntry<bool>("EnableGrab", true,
+                null, "Grab Static cameras with the controller grip to move them.");
+            _allowGrabInGame = _cfg.CreateEntry<bool>("AllowGrabInGame", false,
+                null, "Allow grabbing during songs (off = menus only).");
+            _grabRadius = _cfg.CreateEntry<float>("GrabRadius", 0.25f,
+                null, "Controller-to-camera distance (meters) required to grab.");
 
             _cameraConfig = ConfigLoader.LoadOrCreate();
 
-            MelonLogger.Msg("SynthCamera2 0.3.0 loaded - " + CountEnabled()
+            MelonLogger.Msg("SynthCamera2 0.4.1 loaded - " + CountEnabled()
                 + " camera(s) enabled. F9 reload config, F10 master toggle.");
         }
 
@@ -158,6 +194,25 @@ namespace SynthCamera2
                             + _cameras[i].Def.Name + "\": " + ex.Message);
                 }
             }
+
+            // v0.4: grab-and-place, after follow so grabbed poses win.
+            try
+            {
+                bool allowGrab = _enableGrab.Value && _masterEnabled
+                    && (!_isGameScene || _allowGrabInGame.Value);
+                bool dirty = _grab.Update(_cameras, _rigCached, allowGrab,
+                    _grabRadius.Value, _debugLogging.Value);
+                if (dirty)
+                {
+                    ConfigLoader.Save(_cameraConfig);
+                    MelonLogger.Msg("Camera placement saved to cameras.json.");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_debugLogging.Value)
+                    MelonLogger.Warning("Grab update failed: " + ex.Message);
+            }
         }
 
         public override void OnApplicationQuit()
@@ -201,6 +256,7 @@ namespace SynthCamera2
                     + "cameras will not follow until it appears.");
 
             Transform rig = FindRigRoot(head);
+            _rigCached = rig;
             if (_debugLogging.Value)
                 MelonLogger.Msg("Rig root: " + (rig == null
                     ? "<none, calibration treated as world space>" : rig.name));
@@ -230,6 +286,10 @@ namespace SynthCamera2
 
         private void DestroyAllCameras()
         {
+            // Commit any in-progress grab before its camera disappears.
+            try { _grab.ReleaseAll(); }
+            catch (Exception) { }
+
             for (int i = 0; i < _cameras.Count; i++)
                 _cameras[i].Destroy();
             _cameras.Clear();

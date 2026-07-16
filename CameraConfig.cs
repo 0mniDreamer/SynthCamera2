@@ -59,7 +59,7 @@ namespace SynthCamera2
         public bool ShowHitParticles { get; set; } = true;
         public bool ShowUI { get; set; } = true;
 
-        // ---- v0.2: mixed reality support ----
+        // ---- mixed reality support ----
 
         // "Inherit" = keep the template's clear flags (normal rendering).
         // "Chroma"  = clear to solid ChromaColor; use for MR foreground

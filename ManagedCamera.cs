@@ -6,7 +6,7 @@ namespace SynthCamera2
 {
     // One runtime camera owned by the mod. The spawn recipe is exactly the
     // probe-validated sequence (SynthCameraProbe v0.2.0/v0.3.0, confirmed on
-    // Unity 2021.3.45f2 and 6000.3.13, 2026-07-14):
+    // Unity 2021.3.45f2 and 6000.3.13, 14-07-2026):
     //   clone from the game's active desktop camera -> CopyFrom ->
     //   targetTexture null, stereoTargetEye None, depth offset ->
     //   ensure UniversalAdditionalCameraData -> allowXRRendering = false.
@@ -113,13 +113,13 @@ namespace SynthCamera2
                 if (Def.Fov > 1f)
                     Cam.fieldOfView = Def.Fov;
 
-                // v0.2: MR clip plane overrides.
+                // MR clip plane overrides.
                 if (Def.NearClip > 0f)
                     Cam.nearClipPlane = Def.NearClip;
                 if (Def.FarClip > 0f)
                     Cam.farClipPlane = Def.FarClip;
 
-                // v0.2: chroma background for MR foreground layers.
+                // chroma background for MR foreground layers.
                 bool isChroma = string.Equals(Def.ClearMode, "Chroma",
                     StringComparison.OrdinalIgnoreCase);
                 if (isChroma)
@@ -164,6 +164,9 @@ namespace SynthCamera2
 
                 ApplyEnabledState();
 
+                if (IsGrabbable())
+                    CreateGizmo(debugLog);
+
                 if (debugLog)
                     MelonLogger.Msg("[" + Def.Name + "] spawned: type=" + Def.Type
                         + " depth=" + Cam.depth
@@ -188,6 +191,8 @@ namespace SynthCamera2
             Go = null;
             Cam = null;
             _head = null;
+            _gizmoRoot = null;
+            _gizmoRenderers = null;
         }
 
         public bool IsAlive()
@@ -245,7 +250,214 @@ namespace SynthCamera2
             mask = MaskUtil.SetLayers(mask, AvatarLayers, Def.ShowAvatar);
             mask = MaskUtil.SetLayers(mask, HitParticlesLayers, Def.ShowHitParticles);
             mask = MaskUtil.SetLayers(mask, UiLayers, Def.ShowUI);
+            // v0.4: grab gizmos live on HMDViewOnly; our cameras must never
+            // render that layer regardless of template.
+            mask = MaskUtil.SetLayers(mask, GizmoLayerNames, false);
             return mask;
+        }
+
+        // ---- v0.4: grab-and-place support -----------------------------------
+
+        private static readonly string[] GizmoLayerNames = new string[]
+        {
+            "HMDViewOnly"
+        };
+
+        private GameObject _gizmoRoot;
+        private Renderer[] _gizmoRenderers;
+        private int _gizmoTint = -1;
+
+        public bool IsGrabbable()
+        {
+            // Static only: External is calibration-locked, FirstPerson
+            // follows the head.
+            return IsStatic();
+        }
+
+        public Vector3 GetWorldPos()
+        {
+            return Go != null ? Go.transform.position : Vector3.zero;
+        }
+
+        public Quaternion GetWorldRot()
+        {
+            return Go != null ? Go.transform.rotation : Quaternion.identity;
+        }
+
+        public void SetWorldPose(Vector3 pos, Quaternion rot)
+        {
+            if (Go == null)
+                return;
+            Go.transform.position = pos;
+            Go.transform.rotation = rot;
+        }
+
+        // Persist the current world pose into the def (Static defs are
+        // world-space). Caller saves the config file.
+        public void CommitPoseToDef()
+        {
+            if (Go == null)
+                return;
+            Vector3 p = Go.transform.position;
+            Vector3 e = Go.transform.rotation.eulerAngles;
+            Def.Position = new float[] { p.x, p.y, p.z };
+            Def.Rotation = new float[] { e.x, e.y, e.z };
+        }
+
+        // Camera-shaped marker on the HMDViewOnly layer: visible in the
+        // headset, never on stream. If the layer is missing on some stage,
+        // skip the gizmo entirely rather than risk polluting the feed.
+        private void CreateGizmo(bool debugLog)
+        {
+            int layer = LayerMask.NameToLayer(GizmoLayerNames[0]);
+            if (layer < 0)
+            {
+                if (debugLog)
+                    MelonLogger.Msg("[" + Def.Name + "] HMDViewOnly layer "
+                        + "missing; gizmo skipped.");
+                return;
+            }
+
+            try
+            {
+                _gizmoRoot = new GameObject("Gizmo");
+                _gizmoRoot.transform.SetParent(Go.transform, false);
+                _gizmoRoot.layer = layer;
+
+                GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                PrepareGizmoPart(body, layer, _gizmoRoot.transform,
+                    new Vector3(0f, 0f, -0.02f),
+                    new Vector3(0.14f, 0.10f, 0.16f), debugLog);
+
+                GameObject lens = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                PrepareGizmoPart(lens, layer, _gizmoRoot.transform,
+                    new Vector3(0f, 0f, 0.09f),
+                    new Vector3(0.05f, 0.05f, 0.06f), debugLog);
+
+                _gizmoRenderers = new Renderer[2];
+                _gizmoRenderers[0] = body.GetComponent<Renderer>();
+                _gizmoRenderers[1] = lens.GetComponent<Renderer>();
+                _gizmoTint = -1;
+                SetGizmoTint(0);
+            }
+            catch (Exception ex)
+            {
+                if (debugLog)
+                    MelonLogger.Warning("[" + Def.Name + "] gizmo creation "
+                        + "failed: " + ex.Message);
+                _gizmoRoot = null;
+                _gizmoRenderers = null;
+            }
+        }
+
+        // CreatePrimitive assigns the built-in Standard shader's material,
+        // which is stripped from URP IL2CPP builds -> invisible cubes
+        // (observed 14-07-2026, Unity 6 branch). Resolve a shader that
+        // actually exists in the build, candidates first per house rules.
+        private static readonly string[] GizmoShaderCandidates = new string[]
+        {
+            "Universal Render Pipeline/Unlit",
+            "Universal Render Pipeline/Lit",
+            "Sprites/Default",
+            "UI/Default",
+            "Unlit/Color",
+        };
+
+        private static Shader s_gizmoShader;
+        private static bool s_gizmoShaderSearched;
+
+        private static Shader ResolveGizmoShader(bool debugLog)
+        {
+            if (s_gizmoShaderSearched)
+                return s_gizmoShader;
+            s_gizmoShaderSearched = true;
+
+            for (int i = 0; i < GizmoShaderCandidates.Length; i++)
+            {
+                try
+                {
+                    Shader s = Shader.Find(GizmoShaderCandidates[i]);
+                    if (s != null)
+                    {
+                        s_gizmoShader = s;
+                        if (debugLog)
+                            MelonLogger.Msg("Gizmo shader resolved: \""
+                                + GizmoShaderCandidates[i] + "\".");
+                        return s;
+                    }
+                }
+                catch (Exception) { }
+            }
+            MelonLogger.Warning("No gizmo shader found from candidates; "
+                + "gizmos may be invisible. Send a debug log.");
+            return null;
+        }
+
+        private static void PrepareGizmoPart(GameObject part, int layer,
+            Transform parent, Vector3 localPos, Vector3 localScale, bool debugLog)
+        {
+            part.layer = layer;
+            part.transform.SetParent(parent, false);
+            part.transform.localPosition = localPos;
+            part.transform.localScale = localScale;
+            // CreatePrimitive attaches a collider; remove it so the gizmo
+            // can never interact with game physics.
+            Collider col = part.GetComponent<Collider>();
+            if (col != null)
+                UnityEngine.Object.Destroy(col);
+
+            // Replace the stripped default material with one built on a
+            // shader that exists in this build.
+            Shader shader = ResolveGizmoShader(debugLog);
+            if (shader != null)
+            {
+                try
+                {
+                    Renderer r = part.GetComponent<Renderer>();
+                    if (r != null)
+                        r.material = new Material(shader);
+                }
+                catch (Exception ex)
+                {
+                    if (debugLog)
+                        MelonLogger.Warning("Gizmo material assignment failed: "
+                            + ex.Message);
+                }
+            }
+        }
+
+        public void SetGizmosActive(bool on)
+        {
+            if (_gizmoRoot != null)
+            {
+                if (_gizmoRoot.activeSelf != on)
+                    _gizmoRoot.SetActive(on);
+            }
+        }
+
+        // 0 = idle (white), 1 = in reach (yellow), 2 = held (green).
+        public void SetGizmoTint(int state)
+        {
+            if (_gizmoRenderers == null || state == _gizmoTint)
+                return;
+            _gizmoTint = state;
+
+            Color c = Color.white;
+            if (state == 1)
+                c = Color.yellow;
+            else if (state == 2)
+                c = Color.green;
+
+            for (int i = 0; i < _gizmoRenderers.Length; i++)
+            {
+                try
+                {
+                    if (_gizmoRenderers[i] != null
+                        && _gizmoRenderers[i].material != null)
+                        _gizmoRenderers[i].material.color = c;
+                }
+                catch (Exception) { }
+            }
         }
 
         // ---- per-frame follow (call from OnLateUpdate) ----------------------
@@ -350,7 +562,7 @@ namespace SynthCamera2
     {
         // HMD-only layers removed / third-person layers added when the clone
         // template was a stereo camera. Names verified identical on both
-        // branches (probe logs, 2026-07-14).
+        // branches (probe logs, 14-07-2026).
         private static readonly string[] StereoRemove = new string[]
         {
             "HMDViewOnly", "HideInMainScreen", "FIRSTPERSON_ONLY_LAYER"
@@ -388,7 +600,7 @@ namespace SynthCamera2
     {
         // Ensure UniversalAdditionalCameraData exists and is configured for a
         // desktop-only camera. Typed access validated on BOTH branches
-        // (probe logs, 2026-07-14). allowXRRendering=false is belt-and-braces:
+        // (probe logs, 14-07-2026). allowXRRendering=false is belt-and-braces:
         // the game gates HMD rendering via stereoTargetEye=None, but the URP
         // flag is the documented gate under XR Plugin Management.
         public static void EnsureDesktopCameraData(GameObject go, bool debugLog,

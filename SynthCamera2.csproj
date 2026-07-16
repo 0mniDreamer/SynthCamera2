@@ -6,10 +6,11 @@
     <Nullable>disable</Nullable>
     <AssemblyName>SynthCamera2</AssemblyName>
     <RootNamespace>SynthCamera2</RootNamespace>
-    <Version>0.3.0</Version>
+    <Version>0.4.1</Version>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <GamePath>F:\SteamLibrary\steamapps\common\SynthRiders</GamePath>
+    <!-- Override with: dotnet build -p:GamePath="C:\path\to\SynthRiders" -->
+    <GamePath Condition="'$(GamePath)' == ''">F:\SteamLibrary\steamapps\common\SynthRiders</GamePath>
   </PropertyGroup>
 
   <!-- MelonLoader-bundled and interop references only; no NuGet.
@@ -31,8 +32,18 @@
       <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- v0.4.1: Collider (gizmo collider stripping) -->
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
       <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- v0.4: XR InputDevices for grab-and-place -->
+    <Reference Include="UnityEngine.XRModule">
+      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\UnityEngine.XRModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Runtime">
