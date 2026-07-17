@@ -47,6 +47,7 @@ touched.
 | --- | ------ |
 | F9  | Reload `cameras.json` and rebuild all cameras |
 | F10 | Master toggle: all mod cameras on/off |
+| F8  | Layer-usage diagnostic dump (press mid-song for note/rail layers) |
 
 ## Configuration
 
@@ -68,6 +69,7 @@ Edit `UserData/SynthCamera2/cameras.json`, then press F9 in-game. Each entry in
 | `ForceUpright` | `true` | FirstPerson: kill head roll, keep horizon level |
 | `Offset` | `[0,0,0]` | FirstPerson: offset from the head, in head-local space |
 | `ShowNotes` / `ShowWalls` / `ShowTrails` / `ShowAvatar` / `ShowHitParticles` / `ShowUI` | `true` | Per-camera visibility toggles |
+| `ShowLayers` / `HideLayers` | `[]` | Explicit layer names to force-show/hide, applied after the toggles (`HideLayers` wins); see the F8 dump |
 | `ClearMode` | `"Inherit"` | `Chroma` clears to a solid key color (post-processing disabled to keep the key clean) |
 | `ChromaColor` | `[0,255,0]` | Key color, 0-255 RGB |
 | `NearClip` / `FarClip` | `0` | Clip plane overrides in meters; `0` inherits |
@@ -81,7 +83,7 @@ Mod settings live in `UserData/MelonPreferences.cfg` under `[SynthCamera2]`:
 
 Static cameras show a small camera-shaped gizmo in your headset (white = idle,
 yellow = in reach, green = held). Squeeze **grip** within `GrabRadius`
-(default 0.25 m) to grab, move it, release to place. The pose is written back
+(default 6.25 m — effectively grab-from-anywhere; lower it for touch-only grabbing) to grab, move it, release to place. The pose is written back
 to `cameras.json` automatically.
 
 Grabbing works in menus by default; set `AllowGrabInGame = true` to allow it
@@ -107,9 +109,10 @@ Calibration poses are play-space coordinates, anchored to the XR rig — they
 survive stage offsets. `Fov`/`NearClip`/`FarClip` in the camera def override
 the file.
 
-Tip: use viewport rects (`[0,0,0.5,1]` and `[0.5,0,0.5,1]`) to get background
-and foreground side-by-side in one window, then crop them as separate OBS
-sources.
+**All cameras render into the single game window** — MR layers are viewports
+within it, never separate OS windows. The default calibrated pair ships
+side-by-side (background left, foreground right): capture the game window
+twice in OBS and crop each capture to its half.
 
 ## Troubleshooting
 

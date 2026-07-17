@@ -59,7 +59,13 @@ namespace SynthCamera2
         public bool ShowHitParticles { get; set; } = true;
         public bool ShowUI { get; set; } = true;
 
-        // ---- mixed reality support ----
+        // v0.5: explicit layer control by name, applied AFTER the toggles
+        // above (HideLayers last, so it always wins). Use the F8 layer-usage
+        // dump to see which layers the game's renderers actually occupy.
+        public string[] ShowLayers { get; set; } = new string[0];
+        public string[] HideLayers { get; set; } = new string[0];
+
+        // ---- v0.2: mixed reality support ----
 
         // "Inherit" = keep the template's clear flags (normal rendering).
         // "Chroma"  = clear to solid ChromaColor; use for MR foreground
@@ -161,7 +167,7 @@ namespace SynthCamera2
             var fp = new CameraDef();
             fp.Name = "SmoothFirstPerson";
             fp.Type = "FirstPerson";
-            fp.Enabled = true;
+            fp.Enabled = false;
             fp.VisibleIn = "Always";
             fp.SmoothPosition = 6f;
             fp.SmoothRotation = 4f;
@@ -171,20 +177,21 @@ namespace SynthCamera2
             var tp = new CameraDef();
             tp.Name = "StaticThirdPerson";
             tp.Type = "Static";
-            tp.Enabled = false;
-            tp.VisibleIn = "GameOnly";
+            tp.Enabled = true;
+            tp.VisibleIn = "Always";
+            tp.Fov = 90f;
             tp.Position = new float[] { 1.2f, 2.2f, -3.0f };
             tp.Rotation = new float[] { 18f, -20f, 0f };
             cfg.Cameras.Add(tp);
 
-            // MR foreground example: pair with a normal Static camera at the
-            // SAME Position/Rotation/Fov. FarClip = your distance from the
-            // camera. Chroma-key this feed in OBS above your keyed video.
+            // MR foreground (manual pose): pair with a normal camera at the
+            // SAME pose/FOV. FarClip = your distance from the camera.
             var mr = new CameraDef();
             mr.Name = "MRForeground";
             mr.Type = "Static";
             mr.Enabled = false;
-            mr.VisibleIn = "GameOnly";
+            mr.VisibleIn = "Always";
+            mr.Rect = new float[] { 0.5f, 0f, 0.5f, 1f };
             mr.Position = new float[] { 0f, 1.6f, -2.5f };
             mr.Rotation = new float[] { 5f, 0f, 0f };
             mr.ClearMode = "Chroma";
@@ -194,14 +201,15 @@ namespace SynthCamera2
             cfg.Cameras.Add(mr);
 
             // Calibrated MR pair: both read the same externalcamera.cfg, so
-            // one calibration drives both layers. Background renders the full
-            // scene; foreground renders only what is between the camera and
-            // the player (FarClip) on chroma green.
+            // one calibration drives both layers. Everything renders into the
+            // ONE game window: the pair ships side-by-side (background left,
+            // foreground right); capture the window twice in OBS and crop.
             var mrBg = new CameraDef();
             mrBg.Name = "MRBackgroundCalibrated";
             mrBg.Type = "External";
             mrBg.Enabled = false;
             mrBg.VisibleIn = "Always";
+            mrBg.Rect = new float[] { 0f, 0f, 0.5f, 1f };
             cfg.Cameras.Add(mrBg);
 
             var mrFg = new CameraDef();
@@ -209,6 +217,7 @@ namespace SynthCamera2
             mrFg.Type = "External";
             mrFg.Enabled = false;
             mrFg.VisibleIn = "Always";
+            mrFg.Rect = new float[] { 0.5f, 0f, 0.5f, 1f };
             mrFg.ClearMode = "Chroma";
             mrFg.FarClip = 2.2f;
             mrFg.ShowUI = false;

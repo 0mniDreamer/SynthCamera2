@@ -2,64 +2,244 @@
   "ConfigVersion": 1,
   "Cameras": [
     {
-      "Name": "DirectlyBehind",
-      "Enabled": true,
-      "Type": "Static",
-      "VisibleIn": "Always",
-      "Fov": 65,
-      "Rect": [0, 0, 1, 1],
-      "Position": [0.0, 1.9, -2.8],
-      "Rotation": [10, 0, 0],
-      "SmoothPosition": 6,
-      "SmoothRotation": 4,
-      "ForceUpright": true,
-      "Offset": [0, 0, 0],
-      "ShowNotes": true,
-      "ShowWalls": true,
-      "ShowTrails": true,
-      "ShowAvatar": true,
-      "ShowHitParticles": true,
-      "ShowUI": true
-    },
-    {
-      "Name": "FollowBehind",
-      "Enabled": false,
-      "Type": "FirstPerson",
-      "VisibleIn": "Always",
-      "Fov": 70,
-      "Rect": [0, 0, 1, 1],
-      "Position": [0, 2, -3],
-      "Rotation": [0, 0, 0],
-      "SmoothPosition": 4,
-      "SmoothRotation": 2,
-      "ForceUpright": true,
-      "Offset": [0.0, 0.25, -2.2],
-      "ShowNotes": true,
-      "ShowWalls": true,
-      "ShowTrails": true,
-      "ShowAvatar": true,
-      "ShowHitParticles": true,
-      "ShowUI": true
-    },
-    {
       "Name": "SmoothFirstPerson",
       "Enabled": false,
       "Type": "FirstPerson",
+      "CalibrationFile": "externalcamera.cfg",
       "VisibleIn": "Always",
       "Fov": 0,
-      "Rect": [0, 0, 1, 1],
-      "Position": [0, 0, 0],
-      "Rotation": [0, 0, 0],
+      "Rect": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "Position": [
+        0,
+        2,
+        -3
+      ],
+      "Rotation": [
+        15,
+        0,
+        0
+      ],
       "SmoothPosition": 6,
       "SmoothRotation": 4,
       "ForceUpright": true,
-      "Offset": [0, 0, 0],
+      "Offset": [
+        0,
+        0,
+        0
+      ],
       "ShowNotes": true,
       "ShowWalls": true,
       "ShowTrails": true,
       "ShowAvatar": true,
       "ShowHitParticles": true,
-      "ShowUI": true
+      "ShowUI": true,
+      "ShowLayers": [],
+      "HideLayers": [],
+      "ClearMode": "Inherit",
+      "ChromaColor": [
+        0,
+        255,
+        0
+      ],
+      "NearClip": 0,
+      "FarClip": 0
+    },
+    {
+      "Name": "StaticThirdPerson",
+      "Enabled": true,
+      "Type": "Static",
+      "CalibrationFile": "externalcamera.cfg",
+      "VisibleIn": "Always",
+      "Fov": 90,
+      "Rect": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "Position": [
+        1.2,
+        2.2,
+        -3
+      ],
+      "Rotation": [
+        18,
+        -20,
+        0
+      ],
+      "SmoothPosition": 6,
+      "SmoothRotation": 4,
+      "ForceUpright": true,
+      "Offset": [
+        0,
+        0,
+        0
+      ],
+      "ShowNotes": true,
+      "ShowWalls": true,
+      "ShowTrails": true,
+      "ShowAvatar": true,
+      "ShowHitParticles": true,
+      "ShowUI": true,
+      "ShowLayers": [],
+      "HideLayers": [],
+      "ClearMode": "Inherit",
+      "ChromaColor": [
+        0,
+        255,
+        0
+      ],
+      "NearClip": 0,
+      "FarClip": 0
+    },
+    {
+      "Name": "MRForeground",
+      "Enabled": false,
+      "Type": "Static",
+      "CalibrationFile": "externalcamera.cfg",
+      "VisibleIn": "Always",
+      "Fov": 0,
+      "Rect": [
+        0.5,
+        0,
+        0.5,
+        1
+      ],
+      "Position": [
+        0,
+        1.6,
+        -2.5
+      ],
+      "Rotation": [
+        5,
+        0,
+        0
+      ],
+      "SmoothPosition": 6,
+      "SmoothRotation": 4,
+      "ForceUpright": true,
+      "Offset": [
+        0,
+        0,
+        0
+      ],
+      "ShowNotes": true,
+      "ShowWalls": true,
+      "ShowTrails": true,
+      "ShowAvatar": false,
+      "ShowHitParticles": true,
+      "ShowUI": false,
+      "ShowLayers": [],
+      "HideLayers": [],
+      "ClearMode": "Chroma",
+      "ChromaColor": [
+        0,
+        255,
+        0
+      ],
+      "NearClip": 0,
+      "FarClip": 2.2
+    },
+    {
+      "Name": "MRBackgroundCalibrated",
+      "Enabled": false,
+      "Type": "External",
+      "CalibrationFile": "externalcamera.cfg",
+      "VisibleIn": "Always",
+      "Fov": 0,
+      "Rect": [
+        0,
+        0,
+        0.5,
+        1
+      ],
+      "Position": [
+        0,
+        2,
+        -3
+      ],
+      "Rotation": [
+        15,
+        0,
+        0
+      ],
+      "SmoothPosition": 6,
+      "SmoothRotation": 4,
+      "ForceUpright": true,
+      "Offset": [
+        0,
+        0,
+        0
+      ],
+      "ShowNotes": true,
+      "ShowWalls": true,
+      "ShowTrails": true,
+      "ShowAvatar": true,
+      "ShowHitParticles": true,
+      "ShowUI": true,
+      "ShowLayers": [],
+      "HideLayers": [],
+      "ClearMode": "Inherit",
+      "ChromaColor": [
+        0,
+        255,
+        0
+      ],
+      "NearClip": 0,
+      "FarClip": 0
+    },
+    {
+      "Name": "MRForegroundCalibrated",
+      "Enabled": false,
+      "Type": "External",
+      "CalibrationFile": "externalcamera.cfg",
+      "VisibleIn": "Always",
+      "Fov": 0,
+      "Rect": [
+        0.5,
+        0,
+        0.5,
+        1
+      ],
+      "Position": [
+        0,
+        2,
+        -3
+      ],
+      "Rotation": [
+        15,
+        0,
+        0
+      ],
+      "SmoothPosition": 6,
+      "SmoothRotation": 4,
+      "ForceUpright": true,
+      "Offset": [
+        0,
+        0,
+        0
+      ],
+      "ShowNotes": true,
+      "ShowWalls": true,
+      "ShowTrails": true,
+      "ShowAvatar": false,
+      "ShowHitParticles": true,
+      "ShowUI": false,
+      "ShowLayers": [],
+      "HideLayers": [],
+      "ClearMode": "Chroma",
+      "ChromaColor": [
+        0,
+        255,
+        0
+      ],
+      "NearClip": 0,
+      "FarClip": 2.2
     }
   ]
 }

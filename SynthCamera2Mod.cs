@@ -1,18 +1,56 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using MelonLoader;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.4.1", "OmniDreamer")]
+[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.5.2", "OmniDreamer")]
 [assembly: MelonGame(null, null)]
 
 namespace SynthCamera2
 {
-    // SynthCamera2 v0.4.1 (2026-07-14)
+    // SynthCamera2 v0.5.2 (15-07-2026)
+    //
+    // v0.5.2 changes:
+    //   - Default camera config now matches OmniDreamer's live layout:
+    //     StaticThirdPerson enabled (Fov 90, VisibleIn Always), first-person
+    //     and all MR cameras present but disabled, MRForeground on the right
+    //     half-viewport. Defaults only affect fresh installs; existing
+    //     cameras.json files are never touched.
+    //   - GrabRadius default raised to 6.25m: grip anywhere grabs the
+    //     nearest camera (menu-only by default). Existing MelonPreferences
+    //     keep their saved value.
+    //
+    // v0.5.1 changes:
+    //   - Overlapping-viewport notice (once per config load). The F8 dump
+    //     (15-07-2026, Unity 6) proved the visibility toggles and the layer
+    //     mapping were CORRECT all along -- Notes(22)/WallObstacles(30)/
+    //     HitParticles(23)/StageUI(16) hold the real renderers, and the
+    //     edited camera's mask showed the toggles applied. The "not working"
+    //     report was two stacked fullscreen cameras: the higher-depth one
+    //     covered the camera being edited. The mod now says so.
+    //   - Dump-informed HideLayers tips: in-song hit counters live on
+    //     "Controller Indicator"(25), tutorial/alert text on "Stage"(11);
+    //     neither is part of ShowUI by design -- use HideLayers for those.
+    //
+    // v0.5.0 changes:
+    //   - F8 layer-usage dump: renderer counts + sample objects per layer,
+    //     plus Rail Manager(Clone) subtree layers mid-song. Added because the
+    //     Show* visibility toggles were reported ineffective (15-07-2026);
+    //     the toggle->layer-name mapping came from the layer TABLE, which
+    //     proves layers exist, not that renderers sit on them. The dump gives
+    //     the real mapping so the toggles can be corrected against evidence.
+    //   - Per-camera ShowLayers/HideLayers string arrays: explicit layer
+    //     control by name, applied after the toggles (HideLayers wins).
+    //     Unresolvable names warn in debug builds.
+    //   - Default calibrated MR pair now ships side-by-side viewport rects.
+    //     All cameras render into the ONE game window -- MR layers are
+    //     viewports within it, never separate OS windows; capture the window
+    //     twice in OBS and crop each half.
     //
     // v0.4.1 changes:
     //   - FIX: gizmos were invisible. CreatePrimitive's built-in Standard
-    //     material is stripped from URP IL2CPP builds (observed 2026-07-14,
+    //     material is stripped from URP IL2CPP builds (observed 14-07-2026,
     //     Unity 6 branch; same failure class as the emote-rain quad meshes).
     //     Gizmo materials now use a runtime-resolved shader from candidates
     //     (URP/Unlit first).
@@ -63,11 +101,11 @@ namespace SynthCamera2
     //     MR foreground layers: FarClip at player distance renders only
     //     objects between the camera and the player.
     //
-    // SynthCamera2 v0.1.0 (2026-07-14)
+    // SynthCamera2 v0.1.0 (14-07-2026)
     //
     // Camera2-style multi-camera desktop viewing for Synth Riders PCVR.
     // Single cross-branch DLL (Unity 2021.3.45f2 / 6000.3.13). Built entirely
-    // on SynthCameraProbe v0.1-v0.3 findings, all dated 2026-07-14:
+    // on SynthCameraProbe v0.1-v0.3 findings, all dated 14-07-2026:
     //   - Clone template: the game's active desktop camera
     //     ("[Main Camera]/[ThirdPerson Custom Camera]/..."), never the
     //     Headset Camera. Fallback to Camera.main scrubs HMD-only layers.
@@ -77,7 +115,7 @@ namespace SynthCamera2
     //     8.34ms with and without, spikes symmetric) on both branches.
     //   - Camera GameObjects use the "SynthCamera2_" prefix so SynthPerfFix
     //     can learn to ignore them (it currently stands down when an unknown
-    //     camera appears -- observed 2026-07-14, Unity 6 branch).
+    //     camera appears -- observed 14-07-2026, Unity 6 branch).
     //
     // Config: UserData/SynthCamera2/cameras.json (auto-created with a smoothed
     // first-person camera enabled and a static third-person example disabled).
@@ -122,13 +160,15 @@ namespace SynthCamera2
                 null, "Grab Static cameras with the controller grip to move them.");
             _allowGrabInGame = _cfg.CreateEntry<bool>("AllowGrabInGame", false,
                 null, "Allow grabbing during songs (off = menus only).");
-            _grabRadius = _cfg.CreateEntry<float>("GrabRadius", 0.25f,
-                null, "Controller-to-camera distance (meters) required to grab.");
+            _grabRadius = _cfg.CreateEntry<float>("GrabRadius", 6.25f,
+                null, "Controller-to-camera distance (meters) required to grab. "
+                + "Large values let you grab the nearest camera from anywhere.");
 
             _cameraConfig = ConfigLoader.LoadOrCreate();
 
-            MelonLogger.Msg("SynthCamera2 0.4.1 loaded - " + CountEnabled()
-                + " camera(s) enabled. F9 reload config, F10 master toggle.");
+            MelonLogger.Msg("SynthCamera2 0.5.2 loaded - " + CountEnabled()
+                + " camera(s) enabled. F9 reload config, F10 master toggle, "
+                + "F8 layer dump.");
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -158,6 +198,7 @@ namespace SynthCamera2
                 if (Input.GetKeyDown(KeyCode.F9))
                 {
                     _cameraConfig = ConfigLoader.LoadOrCreate();
+                    _overlapWarned = false;
                     MelonLogger.Msg("Config reloaded (" + CountEnabled()
                         + " camera(s) enabled); rebuilding.");
                     RebuildCameras();
@@ -170,6 +211,8 @@ namespace SynthCamera2
                     MelonLogger.Msg("Master toggle: cameras "
                         + (_masterEnabled ? "ON" : "OFF"));
                 }
+                if (Input.GetKeyDown(KeyCode.F8))
+                    DumpLayerUsage();
             }
             catch (Exception ex)
             {
@@ -230,7 +273,7 @@ namespace SynthCamera2
             // the existing cameras; if none is available (e.g. game display
             // set to OFF during a transition), keep the old cameras rendering
             // and retry shortly. Fixes cameras vanishing across scene loads
-            // when the game's own display camera is off (reported 2026-07-14).
+            // when the game's own display camera is off (reported 14-07-2026).
             bool templateIsStereo;
             Camera template = PickCloneTemplate(out templateIsStereo);
             if (template == null)
@@ -282,6 +325,53 @@ namespace SynthCamera2
             if (_debugLogging.Value)
                 MelonLogger.Msg("Built " + built + " camera(s) from template \""
                     + template.name + "\" (stereo template: " + templateIsStereo + ").");
+
+            WarnOverlappingViewports();
+        }
+
+        // The layer toggles "not working" report (15-07-2026) turned out to be
+        // two fullscreen cameras stacked: the higher-depth one fully covered
+        // the camera being edited. Surface that once per config load.
+        private bool _overlapWarned;
+
+        private void WarnOverlappingViewports()
+        {
+            if (_overlapWarned)
+                return;
+
+            int warnings = 0;
+            for (int i = 0; i < _cameras.Count && warnings < 3; i++)
+            {
+                for (int j = i + 1; j < _cameras.Count && warnings < 3; j++)
+                {
+                    Rect a = RectOf(_cameras[i].Def);
+                    Rect b = RectOf(_cameras[j].Def);
+                    bool overlap = a.xMin < b.xMax && b.xMin < a.xMax
+                        && a.yMin < b.yMax && b.yMin < a.yMax;
+                    if (!overlap)
+                        continue;
+                    _overlapWarned = true;
+                    warnings++;
+                    MelonLogger.Msg("Note: viewports of \"" + _cameras[i].Def.Name
+                        + "\" and \"" + _cameras[j].Def.Name + "\" overlap; \""
+                        + _cameras[j].Def.Name + "\" (higher depth) draws on top "
+                        + "wherever they intersect. Give them separate Rects to "
+                        + "see both.");
+                }
+            }
+        }
+
+        private static Rect RectOf(CameraDef def)
+        {
+            float x = 0f, y = 0f, w = 1f, h = 1f;
+            if (def.Rect != null)
+            {
+                if (def.Rect.Length > 0) x = def.Rect[0];
+                if (def.Rect.Length > 1) y = def.Rect[1];
+                if (def.Rect.Length > 2) w = def.Rect[2];
+                if (def.Rect.Length > 3) h = def.Rect[3];
+            }
+            return new Rect(x, y, w, h);
         }
 
         private void DestroyAllCameras()
@@ -457,7 +547,7 @@ namespace SynthCamera2
 
         // Play-space origin for External (calibrated) cameras. Walk up from
         // the headset looking for the rig root by name candidates; hierarchy
-        // confirmed on both branches (probe logs, 2026-07-14):
+        // confirmed on both branches (probe logs, 14-07-2026):
         // "XR Master/XR Origin/.../Headset Camera".
         private static readonly string[] RigRootNameCandidates = new string[]
         {
@@ -482,6 +572,125 @@ namespace SynthCamera2
                 guard++;
             }
             return null;
+        }
+
+        // v0.5 diagnostic (F8): which layers do the game's renderers actually
+        // occupy? The visibility toggles can only work if notes/walls/etc.
+        // really sit on the semantically-named layers. Press in the menu and
+        // again mid-song; the mid-song dump is the one that matters.
+        private void DumpLayerUsage()
+        {
+            MelonLogger.Msg("==== Layer usage (scene renderers) ====");
+            try
+            {
+                int[] counts = new int[32];
+                int[] sampleCounts = new int[32];
+                string[][] samples = new string[32][];
+                for (int i = 0; i < 32; i++)
+                    samples[i] = new string[4];
+
+                Renderer[] rends = Resources.FindObjectsOfTypeAll<Renderer>();
+                if (rends != null)
+                {
+                    for (int i = 0; i < rends.Length; i++)
+                    {
+                        Renderer r = rends[i];
+                        if (r == null)
+                            continue;
+                        bool inScene = false;
+                        try { inScene = r.gameObject.scene.IsValid(); }
+                        catch (Exception) { }
+                        if (!inScene)
+                            continue;
+
+                        int layer = r.gameObject.layer;
+                        if (layer < 0 || layer > 31)
+                            continue;
+                        counts[layer]++;
+                        if (sampleCounts[layer] < 4)
+                        {
+                            Transform t = r.transform;
+                            string nm = t.parent != null
+                                ? t.parent.name + "/" + t.name : t.name;
+                            samples[layer][sampleCounts[layer]] = nm;
+                            sampleCounts[layer]++;
+                        }
+                    }
+                }
+
+                for (int i = 0; i < 32; i++)
+                {
+                    if (counts[i] == 0)
+                        continue;
+                    string name = LayerMask.LayerToName(i);
+                    if (string.IsNullOrEmpty(name))
+                        name = "<unnamed>";
+                    var sb = new StringBuilder();
+                    sb.Append("  layer ").Append(i.ToString().PadLeft(2))
+                      .Append(" ").Append(name).Append(": ")
+                      .Append(counts[i]).Append(" renderer(s)  e.g. ");
+                    for (int s = 0; s < sampleCounts[i]; s++)
+                    {
+                        if (s > 0)
+                            sb.Append(" | ");
+                        sb.Append(samples[i][s]);
+                    }
+                    MelonLogger.Msg(sb.ToString());
+                }
+
+                DumpRailSubtreeLayers();
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning("Layer usage dump failed: " + ex);
+            }
+            MelonLogger.Msg("==== end layer usage ====");
+        }
+
+        private void DumpRailSubtreeLayers()
+        {
+            try
+            {
+                GameObject rm = GameObject.Find("Rail Manager(Clone)");
+                if (rm == null)
+                {
+                    MelonLogger.Msg("  Rail Manager(Clone): not present "
+                        + "(press F8 again mid-song for note/rail layers).");
+                    return;
+                }
+                bool[] seen = new bool[32];
+                CollectLayers(rm.transform, seen, 0);
+                var sb = new StringBuilder("  Rail Manager(Clone) subtree layers: ");
+                bool first = true;
+                for (int i = 0; i < 32; i++)
+                {
+                    if (!seen[i])
+                        continue;
+                    if (!first)
+                        sb.Append(", ");
+                    first = false;
+                    string nm = LayerMask.LayerToName(i);
+                    sb.Append(i).Append(":")
+                      .Append(string.IsNullOrEmpty(nm) ? "<unnamed>" : nm);
+                }
+                MelonLogger.Msg(sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Warning("  Rail subtree layer dump failed: " + ex.Message);
+            }
+        }
+
+        private void CollectLayers(Transform t, bool[] seen, int depth)
+        {
+            if (t == null || depth > 8)
+                return;
+            int layer = t.gameObject.layer;
+            if (layer >= 0 && layer <= 31)
+                seen[layer] = true;
+            int n = t.childCount;
+            for (int i = 0; i < n; i++)
+                CollectLayers(t.GetChild(i), seen, depth + 1);
         }
 
         // Gameplay marker heuristic: the note pool root exists only in songs

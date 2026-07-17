@@ -113,13 +113,13 @@ namespace SynthCamera2
                 if (Def.Fov > 1f)
                     Cam.fieldOfView = Def.Fov;
 
-                // MR clip plane overrides.
+                // v0.2: MR clip plane overrides.
                 if (Def.NearClip > 0f)
                     Cam.nearClipPlane = Def.NearClip;
                 if (Def.FarClip > 0f)
                     Cam.farClipPlane = Def.FarClip;
 
-                // chroma background for MR foreground layers.
+                // v0.2: chroma background for MR foreground layers.
                 bool isChroma = string.Equals(Def.ClearMode, "Chroma",
                     StringComparison.OrdinalIgnoreCase);
                 if (isChroma)
@@ -166,6 +166,9 @@ namespace SynthCamera2
 
                 if (IsGrabbable())
                     CreateGizmo(debugLog);
+
+                if (debugLog)
+                    WarnMissingCustomLayers();
 
                 if (debugLog)
                     MelonLogger.Msg("[" + Def.Name + "] spawned: type=" + Def.Type
@@ -250,10 +253,38 @@ namespace SynthCamera2
             mask = MaskUtil.SetLayers(mask, AvatarLayers, Def.ShowAvatar);
             mask = MaskUtil.SetLayers(mask, HitParticlesLayers, Def.ShowHitParticles);
             mask = MaskUtil.SetLayers(mask, UiLayers, Def.ShowUI);
+            // v0.5: explicit per-camera layer control, HideLayers wins last.
+            if (Def.ShowLayers != null)
+                mask = MaskUtil.SetLayers(mask, Def.ShowLayers, true);
+            if (Def.HideLayers != null)
+                mask = MaskUtil.SetLayers(mask, Def.HideLayers, false);
             // v0.4: grab gizmos live on HMDViewOnly; our cameras must never
             // render that layer regardless of template.
             mask = MaskUtil.SetLayers(mask, GizmoLayerNames, false);
             return mask;
+        }
+
+        // Debug aid: custom layer names that don't resolve are silently
+        // skipped by SetLayers; surface them so typos are visible.
+        public void WarnMissingCustomLayers()
+        {
+            WarnMissingIn(Def.ShowLayers, "ShowLayers");
+            WarnMissingIn(Def.HideLayers, "HideLayers");
+        }
+
+        private void WarnMissingIn(string[] names, string fieldName)
+        {
+            if (names == null)
+                return;
+            for (int i = 0; i < names.Length; i++)
+            {
+                if (string.IsNullOrEmpty(names[i]))
+                    continue;
+                if (LayerMask.NameToLayer(names[i]) < 0)
+                    MelonLogger.Warning("[" + Def.Name + "] " + fieldName
+                        + " entry \"" + names[i] + "\" is not a layer name "
+                        + "in this scene (check the F8 layer dump).");
+            }
         }
 
         // ---- v0.4: grab-and-place support -----------------------------------

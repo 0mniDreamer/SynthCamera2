@@ -1,6 +1,31 @@
 # Changelog
 
-## 0.4.1 (14-07-2026)
+## 0.5.2 
+- New-install defaults updated: StaticThirdPerson enabled (FOV 90, visible
+  everywhere); first-person and MR cameras included but disabled;
+  MRForeground on the right half-viewport. Existing configs are untouched.
+- Default `GrabRadius` raised to 6.25 m (grip anywhere grabs the nearest
+  camera; grabbing remains menu-only by default). Existing preferences keep
+  their saved value.
+
+## 0.5.1 
+- Added a once-per-config-load notice when enabled cameras have overlapping
+  viewports (the higher-depth camera draws on top). Investigation of the
+  "visibility toggles not working" report showed the toggles and layer
+  mapping were correct; the edited camera was fully covered by a second
+  fullscreen camera.
+
+## 0.5.0 
+- Added F8 layer-usage diagnostic: renderer counts and sample objects per
+  layer, plus the Rail Manager(Clone) subtree layers when pressed mid-song.
+  Added while investigating ineffective visibility toggles.
+- Added per-camera `ShowLayers` / `HideLayers` arrays for explicit layer
+  control by name, applied after the boolean toggles (`HideLayers` wins).
+- The default calibrated MR pair now ships with side-by-side viewport rects.
+  Note: all cameras render into the single game window; MR layers are
+  viewports within it, not separate OS windows.
+
+## 0.4.1
 - Fixed invisible grab gizmos: `CreatePrimitive`'s built-in Standard material
   is stripped from URP IL2CPP builds; gizmo materials now use a
   runtime-resolved shader (URP/Unlit first, with fallbacks).
@@ -10,21 +35,21 @@
 - Build fixes: `MelonLoader.Utils` usings, `UnityEngine.PhysicsModule`
   reference.
 
-## 0.4.0 (14-07-2026)
+## 0.4.0 
 - VR grab-and-place for Static cameras: in-headset gizmos on the HMDViewOnly
   layer (never visible on stream), grip to grab, release to place, pose saved
   back to `cameras.json` automatically. Menu-only by default
   (`AllowGrabInGame` preference). Controller input via `UnityEngine.XR`
   InputDevices.
 
-## 0.3.0 (14-07-2026)
+## 0.3.0
 - `External` camera type: pose/FOV/clip loaded from `externalcamera.cfg`
   (LIV / SteamVR MRC format), searched in `UserData/SynthCamera2/` and the
   game root. Poses are play-space coordinates anchored to the XR rig root and
   re-anchored every frame. Camera-def values override the file. Default
   config gains a disabled calibrated MR camera pair.
 
-## 0.2.0 (14-07-2026)
+## 0.2.0 
 - Fixed cameras vanishing across scene loads when the game's display camera
   is set to off: the game's "[OFF Camera]" is no longer accepted as a clone
   template (rejected by name and by near-empty culling mask), and rebuilds
@@ -34,7 +59,7 @@
   (post-processing disabled on chroma cameras) and `NearClip`/`FarClip`
   overrides for foreground occlusion layers.
 
-## 0.1.0 (14-07-2026)
+## 0.1.0 
 - Initial release: config-driven multi-camera desktop viewing. Smoothed
   first-person and static third-person cameras, per-camera FOV / viewport
   rect / visibility toggles, scene gating (menu/game), F9 config reload,
