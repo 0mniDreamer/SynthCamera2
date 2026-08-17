@@ -9,9 +9,6 @@ One DLL supports **both** game branches (Unity 2021.3.45f2 and Unity 6000.3.13).
 Every camera renders to the desktop window only — the headset view is never
 touched.
 
-
-(videohere or image)
-
 ## Features
 
 - **Multiple simultaneous cameras**, fully config-driven (JSON)
@@ -27,7 +24,7 @@ touched.
 - **Mixed reality support**: chroma-key foreground layers with clip-plane
   control, plus `externalcamera.cfg` calibration file support (LIV / SteamVR
   MRC format)
-- **Scene gating**: cameras can be menu-only, game-only, or always on (WIP)
+- **Scene gating**: cameras can be menu-only, game-only, or always on
 - Works with the game's own display camera set to **off** (recommended — saves
   GPU)
 

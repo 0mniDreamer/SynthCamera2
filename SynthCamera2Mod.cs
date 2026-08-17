@@ -4,12 +4,40 @@ using System.Text;
 using MelonLoader;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.5.2", "OmniDreamer")]
+[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.6.0", "OmniDreamer")]
 [assembly: MelonGame(null, null)]
 
 namespace SynthCamera2
 {
-    // SynthCamera2 v0.5.2 (15-07-2026)
+    // SynthCamera2 v0.6.0 (17-08-2026)
+    //
+    // v0.6.0 changes:
+    //   - The July 2026 game update switched the Unity 6 branch to Input
+    //     System package ONLY; every legacy UnityEngine.Input read throws.
+    //     Our hotkey block swallowed the exception silently -> F8/F9/F10
+    //     dead on the beta build plus per-frame exception cost. All keyboard
+    //     reads now go through KeyInput.cs, the probe-once backend ported
+    //     from SynthRidersTwitchChat v1.2.1: legacy where it works (2021
+    //     branch), Input System Keyboard via reflection where it doesn't,
+    //     clean disable with one warning if neither resolves.
+    //   - GrabManager grip read aligned to the suite-proven pattern from the
+    //     chat mod's XR rewrite: analog CommonUsages.grip with hysteresis
+    //     (>0.75 press, <0.35 release), gripButton bool retained as
+    //     fallback. InputDevices itself was never affected by the input
+    //     backend switch (validated in chat mod production use).
+    //
+    // v0.5.3 changes (optimization pass, zero behavior change):
+    //   - Camera type resolved to an enum at construction; the per-frame
+    //     string comparisons in follow/grab paths are gone.
+    //   - Transform cached per camera; effective-enabled tracked as a managed
+    //     bool instead of reading Cam.enabled via interop each frame.
+    //   - FirstPerson head offset precomputed at construction.
+    //   - GrabManager: XR device reads (4 interop calls per hand per frame)
+    //     skipped entirely when grabbing is disallowed or no grabbable
+    //     cameras exist; gizmo active-state applied only on allow transitions
+    //     and rebuilds (NotifyCamerasRebuilt); tint updates gated on a valid
+    //     hand.
+    //   - OnLateUpdate early-outs when no cameras are built.
     //
     // v0.5.2 changes:
     //   - Default camera config now matches OmniDreamer's live layout:
@@ -166,7 +194,7 @@ namespace SynthCamera2
 
             _cameraConfig = ConfigLoader.LoadOrCreate();
 
-            MelonLogger.Msg("SynthCamera2 0.5.2 loaded - " + CountEnabled()
+            MelonLogger.Msg("SynthCamera2 0.6.0 loaded - " + CountEnabled()
                 + " camera(s) enabled. F9 reload config, F10 master toggle, "
                 + "F8 layer dump.");
         }
@@ -195,7 +223,7 @@ namespace SynthCamera2
 
             try
             {
-                if (Input.GetKeyDown(KeyCode.F9))
+                if (KeyInput.GetKeyDown(KeyCode.F9))
                 {
                     _cameraConfig = ConfigLoader.LoadOrCreate();
                     _overlapWarned = false;
@@ -203,7 +231,7 @@ namespace SynthCamera2
                         + " camera(s) enabled); rebuilding.");
                     RebuildCameras();
                 }
-                if (Input.GetKeyDown(KeyCode.F10))
+                if (KeyInput.GetKeyDown(KeyCode.F10))
                 {
                     _masterEnabled = !_masterEnabled;
                     for (int i = 0; i < _cameras.Count; i++)
@@ -211,7 +239,7 @@ namespace SynthCamera2
                     MelonLogger.Msg("Master toggle: cameras "
                         + (_masterEnabled ? "ON" : "OFF"));
                 }
-                if (Input.GetKeyDown(KeyCode.F8))
+                if (KeyInput.GetKeyDown(KeyCode.F8))
                     DumpLayerUsage();
             }
             catch (Exception ex)
@@ -223,6 +251,9 @@ namespace SynthCamera2
 
         public override void OnLateUpdate()
         {
+            if (_cameras.Count == 0)
+                return;
+
             float dt = Time.unscaledDeltaTime;
             for (int i = 0; i < _cameras.Count; i++)
             {
@@ -327,6 +358,7 @@ namespace SynthCamera2
                     + template.name + "\" (stereo template: " + templateIsStereo + ").");
 
             WarnOverlappingViewports();
+            _grab.NotifyCamerasRebuilt();
         }
 
         // The layer toggles "not working" report (15-07-2026) turned out to be

@@ -1,0 +1,12 @@
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\bin\Release\SynthCamera2.deps.json
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\bin\Release\SynthCamera2.dll
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\bin\Release\SynthCamera2.pdb
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\obj\Release\SynthCamera2.csproj.AssemblyReference.cache
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\obj\Release\SynthCamera2.GeneratedMSBuildEditorConfig.editorconfig
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\obj\Release\SynthCamera2.AssemblyInfoInputs.cache
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\obj\Release\SynthCamera2.AssemblyInfo.cs
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\obj\Release\SynthCamera2.csproj.CoreCompileInputs.cache
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\obj\Release\SynthCamera2.dll
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\obj\Release\refint\SynthCamera2.dll
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\obj\Release\SynthCamera2.pdb
+D:\files\SynthCamera2-repo_v0.6.0\SynthCamera2-repo\obj\Release\ref\SynthCamera2.dll
