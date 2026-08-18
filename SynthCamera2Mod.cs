@@ -12,12 +12,12 @@ namespace SynthCamera2
     // SynthCamera2 v0.6.0 (17-08-2026)
     //
     // v0.6.0 changes:
-    //   - The July 2026 game update switched the Unity 6 branch to Input
+    //   - Input system update switched to future proof the Unity 6 builds to Input
     //     System package ONLY; every legacy UnityEngine.Input read throws.
-    //     Our hotkey block swallowed the exception silently -> F8/F9/F10
-    //     dead on the beta build plus per-frame exception cost. All keyboard
+    //     The hotkey block swallowed the exception silently -> F8/F9/F10
+    //     dead on the some builds plus per-frame exception cost. All keyboard
     //     reads now go through KeyInput.cs, the probe-once backend ported
-    //     from SynthRidersTwitchChat v1.2.1: legacy where it works (2021
+    //     from SynthRidersTwitchChat v1.2.1 mod: legacy where it works (2021
     //     branch), Input System Keyboard via reflection where it doesn't,
     //     clean disable with one warning if neither resolves.
     //   - GrabManager grip read aligned to the suite-proven pattern from the
