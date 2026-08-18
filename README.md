@@ -24,7 +24,7 @@ touched.
 - **Mixed reality support**: chroma-key foreground layers with clip-plane
   control, plus `externalcamera.cfg` calibration file support (LIV / SteamVR
   MRC format)
-- **Scene gating**: cameras can be menu-only, game-only, or always on
+- **Scene gating**: cameras can be menu-only, game-only, or always on (WIP)
 - Works with the game's own display camera set to **off** (recommended — saves
   GPU)
 
