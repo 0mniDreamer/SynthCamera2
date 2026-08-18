@@ -11,8 +11,6 @@
   fallback. VR controller input (`InputDevices`) itself was never affected
   by the backend switch. 
 - Fixed applied where Lindsay Sterling Experiance wasn't displayed in the desktop window
-
-## 0.5.3 
 - Optimization pass, no behavior changes: camera type and head offset are
   resolved once per rebuild instead of per frame; per-camera Transform and
   enabled-state are cached to cut IL2CPP interop calls in the follow loop;
