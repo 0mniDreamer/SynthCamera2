@@ -25,8 +25,7 @@ namespace SynthCamera2
     //     (>0.75 press, <0.35 release), gripButton bool retained as
     //     fallback. InputDevices itself was never affected by the input
     //     backend switch (validated in chat mod production use).
-    //
-    // v0.5.3 changes (optimization pass, zero behavior change):
+    //  (optimization pass, zero behavior change):
     //   - Camera type resolved to an enum at construction; the per-frame
     //     string comparisons in follow/grab paths are gone.
     //   - Transform cached per camera; effective-enabled tracked as a managed
