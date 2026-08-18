@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.6.0 
+- Update to the Input System package only, which silently killed the F8/F9/F10
+  hotkeys and added per-frame exception cost. All keyboard reads now go
+  through a probe-once backend (`KeyInput`): legacy Input where it still
+  works (Unity 2021 branch), the Input System package via reflection where
+  it doesn't, and a clean disable with one warning if neither is available.
+- Grab input aligned to the proven analog pattern: `CommonUsages.grip` with
+  hysteresis (>0.75 press, <0.35 release), `gripButton` retained as
+  fallback. VR controller input (`InputDevices`) itself was never affected
+  by the backend switch. 
+- Fixed applied where Lindsay Sterling Experiance wasn't displayed in the desktop window
+- Optimization pass, no behavior changes: camera type and head offset are
+  resolved once per rebuild instead of per frame; per-camera Transform and
+  enabled-state are cached to cut IL2CPP interop calls in the follow loop;
+  XR controller reads are skipped entirely when grabbing is disallowed or no
+  grabbable cameras exist; gizmo visibility and tints update on transitions
+  rather than every frame.
+
 ## 0.5.2 
 - New-install defaults updated: StaticThirdPerson enabled (FOV 90, visible
   everywhere); first-person and MR cameras included but disabled;
@@ -8,7 +26,7 @@
   camera; grabbing remains menu-only by default). Existing preferences keep
   their saved value.
 
-## 0.5.1 
+## 0.5.1
 - Added a once-per-config-load notice when enabled cameras have overlapping
   viewports (the higher-depth camera draws on top). Investigation of the
   "visibility toggles not working" report showed the toggles and layer
@@ -25,7 +43,7 @@
   Note: all cameras render into the single game window; MR layers are
   viewports within it, not separate OS windows.
 
-## 0.4.1
+## 0.4.1 
 - Fixed invisible grab gizmos: `CreatePrimitive`'s built-in Standard material
   is stripped from URP IL2CPP builds; gizmo materials now use a
   runtime-resolved shader (URP/Unlit first, with fallbacks).
@@ -42,7 +60,7 @@
   (`AllowGrabInGame` preference). Controller input via `UnityEngine.XR`
   InputDevices.
 
-## 0.3.0
+## 0.3.0 
 - `External` camera type: pose/FOV/clip loaded from `externalcamera.cfg`
   (LIV / SteamVR MRC format), searched in `UserData/SynthCamera2/` and the
   game root. Poses are play-space coordinates anchored to the XR rig root and

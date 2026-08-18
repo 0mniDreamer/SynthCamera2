@@ -38,6 +38,16 @@ namespace SynthCamera2
         private float _noDeviceTimer;
         private bool _noDeviceWarned;
 
+        // Perf (v0.6.0): gizmo active-state only changes on allow transitions
+        // and camera rebuilds; don't touch it (or read activeSelf) per frame.
+        private bool _lastAllow;
+        private bool _gizmosApplied;
+
+        public void NotifyCamerasRebuilt()
+        {
+            _gizmosApplied = false;
+        }
+
         public GrabManager()
         {
             _left.Name = "Left";
@@ -48,11 +58,34 @@ namespace SynthCamera2
         public bool Update(List<ManagedCamera> cams, Transform rig, bool allow,
             float radius, bool debugLog)
         {
-            // Gizmo visibility tracks whether grabbing is currently allowed.
-            for (int i = 0; i < cams.Count; i++)
-                cams[i].SetGizmosActive(allow && cams[i].IsGrabbable());
+            // Gizmo visibility tracks whether grabbing is currently allowed;
+            // apply only on transitions and after rebuilds.
+            if (allow != _lastAllow || !_gizmosApplied)
+            {
+                for (int i = 0; i < cams.Count; i++)
+                    cams[i].SetGizmosActive(allow && cams[i].IsGrabbable());
+                _lastAllow = allow;
+                _gizmosApplied = true;
+            }
 
             if (!allow || _xrInputFailed)
+            {
+                bool d1 = ForceRelease(_left);
+                bool d2 = ForceRelease(_right);
+                return d1 || d2;
+            }
+
+            // No grabbable cameras -> skip all XR interop reads this frame.
+            bool anyGrabbable = false;
+            for (int i = 0; i < cams.Count; i++)
+            {
+                if (cams[i].IsGrabbable() && cams[i].IsAlive())
+                {
+                    anyGrabbable = true;
+                    break;
+                }
+            }
+            if (!anyGrabbable)
             {
                 bool d1 = ForceRelease(_left);
                 bool d2 = ForceRelease(_right);
@@ -81,7 +114,8 @@ namespace SynthCamera2
             dirty = ProcessHand(_left, cams, radius, debugLog) || dirty;
             dirty = ProcessHand(_right, cams, radius, debugLog) || dirty;
 
-            UpdateTints(cams, radius);
+            if (_left.Valid || _right.Valid)
+                UpdateTints(cams, radius);
             return dirty;
         }
 
@@ -121,9 +155,23 @@ namespace SynthCamera2
                     UnityEngine.XR.CommonUsages.deviceRotation, out rot))
                     rot = Quaternion.identity;
 
-                bool grip = false;
-                dev.TryGetFeatureValue(
-                    UnityEngine.XR.CommonUsages.gripButton, out grip);
+                // Suite-proven pattern (SynthRidersTwitchChat v1.2.1):
+                // analog grip with hysteresis (>0.75 press, <0.35 release)
+                // is the reliable read across runtimes; gripButton bool is
+                // the fallback when the analog usage is unavailable.
+                bool grip;
+                float gripVal;
+                if (dev.TryGetFeatureValue(
+                    UnityEngine.XR.CommonUsages.grip, out gripVal))
+                {
+                    grip = hs.GripWasHeld ? (gripVal > 0.35f) : (gripVal > 0.75f);
+                }
+                else
+                {
+                    grip = false;
+                    dev.TryGetFeatureValue(
+                        UnityEngine.XR.CommonUsages.gripButton, out grip);
+                }
 
                 if (rig != null)
                 {

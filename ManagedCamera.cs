@@ -21,6 +21,7 @@ namespace SynthCamera2
 
         private Transform _head;
         private Transform _rig;
+        private Transform _tf;
         private Vector3 _cfgPos;
         private Quaternion _cfgRot = Quaternion.identity;
         private bool _cfgValid;
@@ -29,6 +30,13 @@ namespace SynthCamera2
         private bool _poseInitialized;
         private bool _masterVisible = true;
         private bool _sceneVisible = true;
+        private bool _effectiveEnabled;
+
+        // Perf (v0.6.0): the def never changes between rebuilds, so resolve
+        // type and offset once instead of string-comparing every frame.
+        private enum CamType { FirstPerson, Static, External }
+        private readonly CamType _camType;
+        private readonly Vector3 _offsetVec;
 
         // Visibility toggle -> layer names it controls (resolved at runtime).
         private static readonly string[] NotesLayers = new string[] { "Notes" };
@@ -47,6 +55,20 @@ namespace SynthCamera2
         public ManagedCamera(CameraDef def)
         {
             Def = def;
+            _camType = ResolveType(def.Type);
+            _offsetVec = new Vector3(
+                ArrIdx(def.Offset, 0, 0f),
+                ArrIdx(def.Offset, 1, 0f),
+                ArrIdx(def.Offset, 2, 0f));
+        }
+
+        private static CamType ResolveType(string type)
+        {
+            if (string.Equals(type, "Static", StringComparison.OrdinalIgnoreCase))
+                return CamType.Static;
+            if (string.Equals(type, "External", StringComparison.OrdinalIgnoreCase))
+                return CamType.External;
+            return CamType.FirstPerson;
         }
 
         public bool Spawn(Camera template, bool templateIsStereo, Transform head,
@@ -61,6 +83,7 @@ namespace SynthCamera2
             {
                 Go = new GameObject(GoNamePrefix + Def.Name);
                 UnityEngine.Object.DontDestroyOnLoad(Go);
+                _tf = Go.transform;
                 Cam = Go.AddComponent<Camera>();
 
                 try
@@ -148,11 +171,11 @@ namespace SynthCamera2
 
                 if (IsStatic() || (IsExternal() && !_cfgValid))
                 {
-                    Go.transform.position = new Vector3(
+                    _tf.position = new Vector3(
                         ArrIdx(Def.Position, 0, 0f),
                         ArrIdx(Def.Position, 1, 2f),
                         ArrIdx(Def.Position, 2, -3f));
-                    Go.transform.rotation = Quaternion.Euler(
+                    _tf.rotation = Quaternion.Euler(
                         ArrIdx(Def.Rotation, 0, 0f),
                         ArrIdx(Def.Rotation, 1, 0f),
                         ArrIdx(Def.Rotation, 2, 0f));
@@ -193,6 +216,7 @@ namespace SynthCamera2
             }
             Go = null;
             Cam = null;
+            _tf = null;
             _head = null;
             _gizmoRoot = null;
             _gizmoRenderers = null;
@@ -205,17 +229,17 @@ namespace SynthCamera2
 
         private bool IsStatic()
         {
-            return string.Equals(Def.Type, "Static", StringComparison.OrdinalIgnoreCase);
+            return _camType == CamType.Static;
         }
 
         private bool IsExternal()
         {
-            return string.Equals(Def.Type, "External", StringComparison.OrdinalIgnoreCase);
+            return _camType == CamType.External;
         }
 
         private bool IsFirstPerson()
         {
-            return !IsStatic() && !IsExternal();
+            return _camType == CamType.FirstPerson;
         }
 
         // ---- visibility ----------------------------------------------------
@@ -240,9 +264,10 @@ namespace SynthCamera2
 
         private void ApplyEnabledState()
         {
+            _effectiveEnabled = Def.Enabled && _masterVisible && _sceneVisible;
             if (Cam == null)
                 return;
-            Cam.enabled = Def.Enabled && _masterVisible && _sceneVisible;
+            Cam.enabled = _effectiveEnabled;
         }
 
         private int ApplyVisibility(int mask)
@@ -307,30 +332,30 @@ namespace SynthCamera2
 
         public Vector3 GetWorldPos()
         {
-            return Go != null ? Go.transform.position : Vector3.zero;
+            return _tf != null ? _tf.position : Vector3.zero;
         }
 
         public Quaternion GetWorldRot()
         {
-            return Go != null ? Go.transform.rotation : Quaternion.identity;
+            return _tf != null ? _tf.rotation : Quaternion.identity;
         }
 
         public void SetWorldPose(Vector3 pos, Quaternion rot)
         {
-            if (Go == null)
+            if (_tf == null)
                 return;
-            Go.transform.position = pos;
-            Go.transform.rotation = rot;
+            _tf.position = pos;
+            _tf.rotation = rot;
         }
 
         // Persist the current world pose into the def (Static defs are
         // world-space). Caller saves the config file.
         public void CommitPoseToDef()
         {
-            if (Go == null)
+            if (_tf == null)
                 return;
-            Vector3 p = Go.transform.position;
-            Vector3 e = Go.transform.rotation.eulerAngles;
+            Vector3 p = _tf.position;
+            Vector3 e = _tf.rotation.eulerAngles;
             Def.Position = new float[] { p.x, p.y, p.z };
             Def.Rotation = new float[] { e.x, e.y, e.z };
         }
@@ -495,7 +520,7 @@ namespace SynthCamera2
 
         public void LateUpdateFollow(float dt)
         {
-            if (Cam == null || !Cam.enabled)
+            if (Cam == null || !_effectiveEnabled)
                 return;
 
             // External: re-anchor to the rig every frame so calibrated pose
@@ -511,12 +536,8 @@ namespace SynthCamera2
                 return;
 
             Vector3 targetPos = _head.position;
-            Vector3 off = new Vector3(
-                ArrIdx(Def.Offset, 0, 0f),
-                ArrIdx(Def.Offset, 1, 0f),
-                ArrIdx(Def.Offset, 2, 0f));
-            if (off.sqrMagnitude > 0.000001f)
-                targetPos = _head.TransformPoint(off);
+            if (_offsetVec.sqrMagnitude > 0.000001f)
+                targetPos = _head.TransformPoint(_offsetVec);
 
             Quaternion targetRot = _head.rotation;
             if (Def.ForceUpright)
@@ -546,25 +567,25 @@ namespace SynthCamera2
                 _smoothedRot = Quaternion.Slerp(_smoothedRot, targetRot, rt);
             }
 
-            Go.transform.position = _smoothedPos;
-            Go.transform.rotation = _smoothedRot;
+            _tf.position = _smoothedPos;
+            _tf.rotation = _smoothedRot;
         }
 
         // Transform the play-space calibration pose through the rig root.
         // No rig found -> treat calibration as world space.
         private void ApplyExternalPose()
         {
-            if (Go == null)
+            if (_tf == null)
                 return;
             if (_rig != null)
             {
-                Go.transform.position = _rig.TransformPoint(_cfgPos);
-                Go.transform.rotation = _rig.rotation * _cfgRot;
+                _tf.position = _rig.TransformPoint(_cfgPos);
+                _tf.rotation = _rig.rotation * _cfgRot;
             }
             else
             {
-                Go.transform.position = _cfgPos;
-                Go.transform.rotation = _cfgRot;
+                _tf.position = _cfgPos;
+                _tf.rotation = _cfgRot;
             }
         }
 

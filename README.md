@@ -9,9 +9,6 @@ One DLL supports **both** game branches (Unity 2021.3.45f2 and Unity 6000.3.13).
 Every camera renders to the desktop window only — the headset view is never
 touched.
 
-
-(videohere or image)
-
 ## Features
 
 - **Multiple simultaneous cameras**, fully config-driven (JSON)
