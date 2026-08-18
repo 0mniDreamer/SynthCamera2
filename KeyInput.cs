@@ -7,7 +7,7 @@ using UnityEngine;
 namespace SynthCamera2
 {
     // Cross-branch keyboard reads. Ported from the SynthRidersTwitchChat
-    // v1.2.1 KeyInput backend (pattern proven in production, 2026-07/08).
+    // v1.2.1 KeyInput backend (pattern proven in production).
     //
     // The recent game update switched the Unity 6 branch's Player Settings
     // to "Input System package only": every UnityEngine.Input read THROWS
