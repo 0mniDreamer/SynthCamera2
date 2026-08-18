@@ -6,7 +6,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>SynthCamera2</AssemblyName>
     <RootNamespace>SynthCamera2</RootNamespace>
-    <Version>0.6.1</Version>
+    <Version>0.6.2</Version>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <!-- Override with: dotnet build -p:GamePath="C:\path\to\SynthRiders" -->

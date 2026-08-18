@@ -4,12 +4,19 @@ using System.Text;
 using MelonLoader;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.6.1", "OmniDreamer")]
+[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.6.2", "OmniDreamer")]
 [assembly: MelonGame(null, null)]
 
 namespace SynthCamera2
 {
-    // SynthCamera2 v0.6.1 (17-08-2026)
+    // SynthCamera2 v0.6.2 (17-08-2026)
+    //
+    // v0.6.2 changes:
+    //   - PostProcessing now defaults to "Off" Cameras
+    //     without the field in cameras.json render without bloom; set
+    //     "Auto" or "On" per camera to bring it back. The v0.6.1 template
+    //     URP copy (volume mask, AA) still happens regardless, so flipping
+    //     a camera to On works without other changes.
     //
     // v0.6.1 changes:
     //   - Post-processing (bloom) restored on mod cameras. Root cause:
@@ -206,7 +213,7 @@ namespace SynthCamera2
 
             _cameraConfig = ConfigLoader.LoadOrCreate();
 
-            MelonLogger.Msg("SynthCamera2 0.6.1 loaded - " + CountEnabled()
+            MelonLogger.Msg("SynthCamera2 0.6.2 loaded - " + CountEnabled()
                 + " camera(s) enabled. F9 reload config, F10 master toggle, "
                 + "F8 layer dump.");
         }

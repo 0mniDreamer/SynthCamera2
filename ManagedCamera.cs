@@ -6,7 +6,7 @@ namespace SynthCamera2
 {
     // One runtime camera owned by the mod. The spawn recipe is exactly the
     // probe-validated sequence (SynthCameraProbe v0.2.0/v0.3.0, confirmed on
-    // Unity 2021.3.45f2 and 6000.3.13, 14-07-2026):
+    // Unity 2021.3.45f2 and 6000.3.13, 2026-07-14):
     //   clone from the game's active desktop camera -> CopyFrom ->
     //   targetTexture null, stereoTargetEye None, depth offset ->
     //   ensure UniversalAdditionalCameraData -> allowXRRendering = false.
@@ -626,7 +626,7 @@ namespace SynthCamera2
     {
         // HMD-only layers removed / third-person layers added when the clone
         // template was a stereo camera. Names verified identical on both
-        // branches (probe logs, 14-07-2026).
+        // branches (probe logs, 2026-07-14).
         private static readonly string[] StereoRemove = new string[]
         {
             "HMDViewOnly", "HideInMainScreen", "FIRSTPERSON_ONLY_LAYER"

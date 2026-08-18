@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.2 
+- `PostProcessing` now defaults to `"Off"`. Set `"Auto"` or `"On"` per
+  camera to enable bloom/tonemapping.
+
 ## 0.6.1 
 - Restored post-processing (bloom, tonemapping) on mod cameras: the URP
   volume layer mask and antialiasing settings are now copied from the clone
@@ -92,4 +96,3 @@
   rect / visibility toggles, scene gating (menu/game), F9 config reload,
   F10 master toggle. Desktop-only rendering with zero HMD impact, verified
   on both Unity branches.
-

@@ -68,9 +68,9 @@ namespace SynthCamera2
         // ---- v0.2: mixed reality support ----
 
         // Post-processing (bloom, tonemapping) on this camera.
-        // "Auto" = on for normal cameras, off for Chroma cameras (bloom
-        // bleeds into the key color). "On"/"Off" force it either way.
-        public string PostProcessing { get; set; } = "Auto";
+        // Default "Off". "Auto" = on for normal cameras, off for Chroma
+        // cameras (bloom bleeds into the key color). "On" forces it on.
+        public string PostProcessing { get; set; } = "Off";
 
         // "Inherit" = keep the template's clear flags (normal rendering).
         // "Chroma"  = clear to solid ChromaColor; use for MR foreground
