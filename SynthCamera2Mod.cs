@@ -4,12 +4,25 @@ using System.Text;
 using MelonLoader;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.6.0", "OmniDreamer")]
+[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.6.1", "OmniDreamer")]
 [assembly: MelonGame(null, null)]
 
 namespace SynthCamera2
 {
-    // SynthCamera2 v0.6.0 (17-08-2026)
+    // SynthCamera2 v0.6.1 (17-08-2026)
+    //
+    // v0.6.1 changes:
+    //   - Post-processing (bloom) restored on mod cameras. Root cause:
+    //     CopyFrom copies Camera fields only; fresh URP data defaults
+    //     volumeLayerMask to "Default", so the game's post-processing
+    //     Volumes never reached our cameras. Template URP data
+    //     (volumeLayerMask, antialiasing + quality, shadows, dithering) is
+    //     now copied at spawn -- the template view visibly has bloom, so its
+    //     values are known-good. Each copy is individually guarded against
+    //     URP surface differences between branches.
+    //   - New per-camera "PostProcessing" field: "Auto" (on unless Chroma --
+    //     previous behavior), "On", "Off". Lets MR foreground layers opt
+    //     into bloom despite the key-contamination tradeoff.
     //
     // v0.6.0 changes:
     //   - Input system update switched to future proof the Unity 6 builds to Input
@@ -193,7 +206,7 @@ namespace SynthCamera2
 
             _cameraConfig = ConfigLoader.LoadOrCreate();
 
-            MelonLogger.Msg("SynthCamera2 0.6.0 loaded - " + CountEnabled()
+            MelonLogger.Msg("SynthCamera2 0.6.1 loaded - " + CountEnabled()
                 + " camera(s) enabled. F9 reload config, F10 master toggle, "
                 + "F8 layer dump.");
         }

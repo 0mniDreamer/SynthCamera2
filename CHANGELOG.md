@@ -1,7 +1,16 @@
 # Changelog
 
+## 0.6.1 
+- Restored post-processing (bloom, tonemapping) on mod cameras: the URP
+  volume layer mask and antialiasing settings are now copied from the clone
+  template, so the game's post-processing volumes actually affect mod
+  cameras. Previously a fresh camera's default volume mask could miss them
+  entirely.
+- New per-camera `PostProcessing` option: `"Auto"` (on for normal cameras,
+  off for Chroma — the previous behavior), `"On"`, or `"Off"`.
+
 ## 0.6.0 
-- Update to the Input System package only, which silently killed the F8/F9/F10
+- Game update compatibility: Update to the Input System package only, which silently killed the F8/F9/F10
   hotkeys and added per-frame exception cost. All keyboard reads now go
   through a probe-once backend (`KeyInput`): legacy Input where it still
   works (Unity 2021 branch), the Input System package via reflection where
@@ -83,3 +92,4 @@
   rect / visibility toggles, scene gating (menu/game), F9 config reload,
   F10 master toggle. Desktop-only rendering with zero HMD impact, verified
   on both Unity branches.
+

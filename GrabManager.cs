@@ -38,7 +38,7 @@ namespace SynthCamera2
         private float _noDeviceTimer;
         private bool _noDeviceWarned;
 
-        // Perf (v0.6.0): gizmo active-state only changes on allow transitions
+        // Perf (v0.5.3): gizmo active-state only changes on allow transitions
         // and camera rebuilds; don't touch it (or read activeSelf) per frame.
         private bool _lastAllow;
         private bool _gizmosApplied;

@@ -24,7 +24,7 @@ touched.
 - **Mixed reality support**: chroma-key foreground layers with clip-plane
   control, plus `externalcamera.cfg` calibration file support (LIV / SteamVR
   MRC format)
-- **Scene gating**: cameras can be menu-only, game-only, or always on (WIP)
+- **Scene gating**: cameras can be menu-only, game-only, or always on
 - Works with the game's own display camera set to **off** (recommended — saves
   GPU)
 
@@ -70,6 +70,7 @@ Edit `UserData/SynthCamera2/cameras.json`, then press F9 in-game. Each entry in
 | `Offset` | `[0,0,0]` | FirstPerson: offset from the head, in head-local space |
 | `ShowNotes` / `ShowWalls` / `ShowTrails` / `ShowAvatar` / `ShowHitParticles` / `ShowUI` | `true` | Per-camera visibility toggles |
 | `ShowLayers` / `HideLayers` | `[]` | Explicit layer names to force-show/hide, applied after the toggles (`HideLayers` wins); see the F8 dump |
+| `PostProcessing` | `"Auto"` | Bloom/tonemapping: `Auto` = on unless Chroma, or force `On`/`Off` |
 | `ClearMode` | `"Inherit"` | `Chroma` clears to a solid key color (post-processing disabled to keep the key clean) |
 | `ChromaColor` | `[0,255,0]` | Key color, 0-255 RGB |
 | `NearClip` / `FarClip` | `0` | Clip plane overrides in meters; `0` inherits |
