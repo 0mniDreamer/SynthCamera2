@@ -721,10 +721,36 @@ namespace SynthCamera2
 
                 data.allowXRRendering = false;
                 data.renderPostProcessing = postProcessing;
+
+                // v0.6.3 (18-08-2026): renderPostProcessing=false was set but
+                // bloom still rendered on the Unity 6 branch (field log,
+                // 18-08-2026). Bloom/tonemapping come from the Volume
+                // framework, so when post-processing is off we also cut the
+                // volume link entirely -- an empty volume mask yields an
+                // empty post stack even if the flag is ignored somewhere in
+                // the Render Graph path.
+                if (!postProcessing)
+                {
+                    try { data.volumeLayerMask = 0; }
+                    catch (Exception) { }
+                }
+
                 if (debugLog)
+                {
+                    // Read back what the properties actually hold, not what
+                    // we wrote -- catches silent overrides.
+                    bool ppNow = postProcessing;
+                    int volNow = -1;
+                    try { ppNow = data.renderPostProcessing; }
+                    catch (Exception) { }
+                    try { volNow = (int)data.volumeLayerMask; }
+                    catch (Exception) { }
                     MelonLogger.Msg("[" + camName + "] URP data configured "
-                        + "(allowXRRendering=false, postProcessing="
-                        + postProcessing + ").");
+                        + "(allowXRRendering=false, postProcessing wrote="
+                        + postProcessing + " readback=" + ppNow
+                        + ", volumeLayerMask readback=0x"
+                        + volNow.ToString("X8") + ").");
+                }
             }
             catch (Exception ex)
             {

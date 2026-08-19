@@ -4,12 +4,21 @@ using System.Text;
 using MelonLoader;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.6.2", "OmniDreamer")]
+[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.6.3", "OmniDreamer")]
 [assembly: MelonGame(null, null)]
 
 namespace SynthCamera2
 {
-    // SynthCamera2 v0.6.2 (17-08-2026)
+    // SynthCamera2 v0.6.3 (18-08-2026)
+    //
+    // v0.6.3 changes:
+    //   - FIX: PostProcessing "Off" not honored on the Unity 6 branch --
+    //     renderPostProcessing=false was written (log-verified) but bloom
+    //     still rendered. When post-processing is off, the camera's URP
+    //     volumeLayerMask is now zeroed as well: no volumes -> empty post
+    //     stack -> no bloom, regardless of whether the flag is respected by
+    //     the Render Graph path. Debug logs now read the properties BACK
+    //     after setting (wrote= vs readback=) to catch silent overrides.
     //
     // v0.6.2 changes:
     //   - PostProcessing now defaults to "Off" Cameras
@@ -213,7 +222,7 @@ namespace SynthCamera2
 
             _cameraConfig = ConfigLoader.LoadOrCreate();
 
-            MelonLogger.Msg("SynthCamera2 0.6.2 loaded - " + CountEnabled()
+            MelonLogger.Msg("SynthCamera2 0.6.3 loaded - " + CountEnabled()
                 + " camera(s) enabled. F9 reload config, F10 master toggle, "
                 + "F8 layer dump.");
         }

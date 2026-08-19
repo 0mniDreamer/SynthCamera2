@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.3
+- Fixed `PostProcessing: "Off"` not being honored on the Unity 6 branch:
+  bloom rendered even with post-processing disabled on the camera. The
+  camera's post-processing volume mask is now cleared as well when
+  post-processing is off, which removes bloom regardless. Debug logs now
+  read the URP settings back after applying them.
+
 ## 0.6.2 
 - `PostProcessing` now defaults to `"Off"`. Set `"Auto"` or `"On"` per
   camera to enable bloom/tonemapping.
