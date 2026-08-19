@@ -165,9 +165,21 @@ namespace SynthCamera2
                 mask = ApplyVisibility(mask);
                 Cam.cullingMask = mask;
 
-                // Post-processing off on chroma cameras: bloom/tonemapping
-                // would contaminate the key color.
-                UrpUtil.EnsureDesktopCameraData(Go, debugLog, Def.Name, !isChroma);
+                // Post-processing: Auto = on unless chroma (bloom would
+                // contaminate the key color); On/Off force it. Template URP
+                // data (volume mask, AA) is copied so post-processing volumes
+                // actually reach this camera -- v0.6.1, see UrpUtil.
+                bool pp;
+                if (string.Equals(Def.PostProcessing, "On",
+                    StringComparison.OrdinalIgnoreCase))
+                    pp = true;
+                else if (string.Equals(Def.PostProcessing, "Off",
+                    StringComparison.OrdinalIgnoreCase))
+                    pp = false;
+                else
+                    pp = !isChroma;
+                UrpUtil.EnsureDesktopCameraData(Go, template, debugLog,
+                    Def.Name, pp);
 
                 if (IsStatic() || (IsExternal() && !_cfgValid))
                 {
@@ -655,8 +667,8 @@ namespace SynthCamera2
         // (probe logs, 14-07-2026). allowXRRendering=false is belt-and-braces:
         // the game gates HMD rendering via stereoTargetEye=None, but the URP
         // flag is the documented gate under XR Plugin Management.
-        public static void EnsureDesktopCameraData(GameObject go, bool debugLog,
-            string camName, bool postProcessing)
+        public static void EnsureDesktopCameraData(GameObject go,
+            Camera template, bool debugLog, string camName, bool postProcessing)
         {
             try
             {
@@ -666,12 +678,79 @@ namespace SynthCamera2
                     data = go.AddComponent<
                         UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
 
+                // v0.6.1: CopyFrom does not touch URP data, and fresh data
+                // defaults volumeLayerMask to "Default" -- if the game's
+                // post-processing Volumes live on another layer, bloom and
+                // tonemapping silently vanish. Copy the template's URP data
+                // (visibly correct: the template view HAS bloom). Each copy
+                // is isolated: URP property surfaces differ across versions.
+                if (template != null)
+                {
+                    var src = (UnityEngine.Rendering.Universal
+                        .UniversalAdditionalCameraData)null;
+                    try
+                    {
+                        src = template.gameObject.GetComponent<
+                            UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+                    }
+                    catch (Exception) { }
+
+                    if (src != null)
+                    {
+                        try { data.volumeLayerMask = src.volumeLayerMask; }
+                        catch (Exception) { }
+                        try { data.antialiasing = src.antialiasing; }
+                        catch (Exception) { }
+                        try { data.antialiasingQuality = src.antialiasingQuality; }
+                        catch (Exception) { }
+                        try { data.renderShadows = src.renderShadows; }
+                        catch (Exception) { }
+                        try { data.dithering = src.dithering; }
+                        catch (Exception) { }
+                        if (debugLog)
+                            MelonLogger.Msg("[" + camName + "] URP data copied "
+                                + "from template (volumeLayerMask=0x"
+                                + ((int)src.volumeLayerMask).ToString("X8") + ").");
+                    }
+                    else if (debugLog)
+                    {
+                        MelonLogger.Msg("[" + camName + "] template has no URP "
+                            + "data; volume mask left at defaults.");
+                    }
+                }
+
                 data.allowXRRendering = false;
                 data.renderPostProcessing = postProcessing;
+
+                // v0.6.3 (18-08-2026): renderPostProcessing=false was set but
+                // bloom still rendered on the Unity 6 branch (field log,
+                // 18-08-2026). Bloom/tonemapping come from the Volume
+                // framework, so when post-processing is off we also cut the
+                // volume link entirely -- an empty volume mask yields an
+                // empty post stack even if the flag is ignored somewhere in
+                // the Render Graph path.
+                if (!postProcessing)
+                {
+                    try { data.volumeLayerMask = 0; }
+                    catch (Exception) { }
+                }
+
                 if (debugLog)
+                {
+                    // Read back what the properties actually hold, not what
+                    // I wrote -- catches silent overrides.
+                    bool ppNow = postProcessing;
+                    int volNow = -1;
+                    try { ppNow = data.renderPostProcessing; }
+                    catch (Exception) { }
+                    try { volNow = (int)data.volumeLayerMask; }
+                    catch (Exception) { }
                     MelonLogger.Msg("[" + camName + "] URP data configured "
-                        + "(allowXRRendering=false, postProcessing="
-                        + postProcessing + ").");
+                        + "(allowXRRendering=false, postProcessing wrote="
+                        + postProcessing + " readback=" + ppNow
+                        + ", volumeLayerMask readback=0x"
+                        + volNow.ToString("X8") + ").");
+                }
             }
             catch (Exception ex)
             {

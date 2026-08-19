@@ -9,8 +9,9 @@ namespace SynthCamera2
     // Cross-branch keyboard reads. Ported from the SynthRidersTwitchChat
     // v1.2.1 KeyInput backend (pattern proven in production).
     //
-    // An update for to system encase input system is switched on the Unity 6 branch's Player Settings
-    // to "Input System package only": every UnityEngine.Input read THROWS
+    // Handles game builds where the Player Settings are switched to
+    // "Input System package only" (as on the Unity 6 branch): every legacy
+    // UnityEngine.Input read THROWS
     // InvalidOperationException. The Unity 2021 branch still runs legacy
     // input. Probe once at first use:
     //   legacy works  -> use it (2021 branch, zero behaviour change)
