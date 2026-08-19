@@ -32,7 +32,7 @@ namespace SynthCamera2
         private bool _sceneVisible = true;
         private bool _effectiveEnabled;
 
-        // Perf (v0.5.3): the def never changes between rebuilds, so resolve
+        // Perf (v0.6.0): the def never changes between rebuilds, so resolve
         // type and offset once instead of string-comparing every frame.
         private enum CamType { FirstPerson, Static, External }
         private readonly CamType _camType;
