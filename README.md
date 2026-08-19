@@ -77,11 +77,13 @@ Edit `UserData/SynthCamera2/cameras.json`, then press F9 in-game. Each entry in
 | `Offset` | `[0,0,0]` | FirstPerson: offset from the head, in head-local space |
 | `ShowNotes` / `ShowWalls` / `ShowTrails` / `ShowAvatar` / `ShowHitParticles` / `ShowUI` | `true` | Per-camera visibility toggles |
 | `ShowLayers` / `HideLayers` | `[]` | Explicit layer names to force-show/hide, applied after the toggles (`HideLayers` wins). Use the F8 dump to see layer names; useful ones: `"Controller Indicator"` (hit counters by your hands), `"Stage"` (tutorial/alert text) |
-| `PostProcessing` | `"Off"` | Bloom/tonemapping: `Off` (default), `Auto` (on unless `Chroma`), or `On` |
+| `PostProcessing` | `"Off"` | Bloom/tonemapping: `Off` (default), `Auto` (on unless `Chroma`), or `On`  |
 | `ClearMode` | `"Inherit"` | `Chroma` clears to a solid key color for MR foreground layers |
 | `ChromaColor` | `[0,255,0]` | Key color, 0-255 RGB |
 | `NearClip` / `FarClip` | `0` | Clip plane overrides in meters; `0` inherits |
 | `CalibrationFile` | `"externalcamera.cfg"` | External: calibration file name or absolute path |
+
+### !! WARNING IF YOU ENABLE POSTPROCESSING BE AWARE THAT IT MAY CAUSE PERFORMANCE ISSUE'S !!
 
 Mod settings live in `UserData/MelonPreferences.cfg` under `[SynthCamera2]`:
 
