@@ -42,10 +42,6 @@ namespace SynthCamera2
         private static readonly string[] NotesLayers = new string[] { "Notes" };
         private static readonly string[] WallsLayers = new string[] { "WallObstacles" };
         private static readonly string[] TrailsLayers = new string[] { "ControllersTrail" };
-        private static readonly string[] AvatarLayers = new string[]
-        {
-            "PlayerAvatar", "OculusAvatar2"
-        };
         private static readonly string[] HitParticlesLayers = new string[] { "HitParticles" };
         private static readonly string[] UiLayers = new string[]
         {
@@ -287,7 +283,6 @@ namespace SynthCamera2
             mask = MaskUtil.SetLayers(mask, NotesLayers, Def.ShowNotes);
             mask = MaskUtil.SetLayers(mask, WallsLayers, Def.ShowWalls);
             mask = MaskUtil.SetLayers(mask, TrailsLayers, Def.ShowTrails);
-            mask = MaskUtil.SetLayers(mask, AvatarLayers, Def.ShowAvatar);
             mask = MaskUtil.SetLayers(mask, HitParticlesLayers, Def.ShowHitParticles);
             mask = MaskUtil.SetLayers(mask, UiLayers, Def.ShowUI);
             // v0.5: explicit per-camera layer control, HideLayers wins last.

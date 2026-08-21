@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.1
+- Removed the `ShowAvatar` option. Existing configs containing the field
+  still load (the field is ignored). To hide avatar layers on a camera, use
+  `"HideLayers": ["PlayerAvatar"]`.
+
+## 0.7.0
+- Fixed `ShowNotes` / `ShowUI` no longer hiding notes and score UI after the
+  game update: the game moved the visible note/rail meshes and part of the
+  score HUD onto the Default layer, which culling cannot selectively hide.
+  The mod now moves those objects back onto the `Notes` / `StageUI` layers
+  when (and only when) an enabled camera hides notes or UI, with a periodic
+  in-game re-sweep. The headset view is unaffected.
+
 ## 0.6.3
 - Fixed `PostProcessing: "Off"` not being honored on the Unity 6 branch:
   bloom rendered even with post-processing disabled on the camera. The
@@ -21,7 +34,7 @@
   off for Chroma — the previous behavior), `"On"`, or `"Off"`.
 
 ## 0.6.0 
-- Update to the Input System package only, which silently killed the F8/F9/F10
+- Game update compatibility: Update to the Input System package only, which silently killed the F8/F9/F10
   hotkeys and added per-frame exception cost. All keyboard reads now go
   through a probe-once backend (`KeyInput`): legacy Input where it still
   works (Unity 2021 branch), the Input System package via reflection where
