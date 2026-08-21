@@ -34,7 +34,7 @@
   off for Chroma — the previous behavior), `"On"`, or `"Off"`.
 
 ## 0.6.0 
-- Game update compatibility: Update to the Input System package only, which silently killed the F8/F9/F10
+- Update to the Input System package only, which silently killed the F8/F9/F10
   hotkeys and added per-frame exception cost. All keyboard reads now go
   through a probe-once backend (`KeyInput`): legacy Input where it still
   works (Unity 2021 branch), the Input System package via reflection where
