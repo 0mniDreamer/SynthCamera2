@@ -4,12 +4,28 @@ using System.Text;
 using MelonLoader;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.6.3", "OmniDreamer")]
+[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.7.1", "OmniDreamer")]
 [assembly: MelonGame(null, null)]
 
 namespace SynthCamera2
 {
-    // SynthCamera2 v0.6.3 (18-08-2026)
+    // SynthCamera2 v0.7.1 (19-08-2026)
+    //
+    // v0.7.1 changes:
+    //   - ShowAvatar option removed. Existing cameras.json files with the
+    //     field still load (unknown JSON properties are skipped); the layers
+    //     it controlled (PlayerAvatar/OculusAvatar2) can still be hidden per
+    //     camera via HideLayers if ever needed.
+    //
+    // v0.7.0 changes:
+    //   - FIX: ShowNotes/ShowUI stopped hiding notes and score UI on the
+    //     updated game build. Layer dumps (19-08-2026) showed the game moved
+    //     the visible note/rail meshes ("Note Model" subtrees) and 83
+    //     "[Score UI]" objects onto layer 0 Default, which culling cannot
+    //     selectively hide. New LayerNormalizer moves those strays back to
+    //     Notes / StageUI at rebuild, with a 10s in-game re-sweep for pool
+    //     growth. Runs ONLY when an enabled camera hides notes or UI;
+    //     headset view is unchanged either way (it renders both layers).
     //
     // v0.6.3 changes:
     //   - FIX: PostProcessing "Off" not honored on the Unity 6 branch --
@@ -206,6 +222,14 @@ namespace SynthCamera2
         private bool _masterEnabled = true;
         private bool _isGameScene;
 
+        // v0.7.0: layer normalization (ShowNotes/ShowUI on the updated game
+        // build). Flags computed at rebuild from the built cameras' defs;
+        // periodic re-sweep catches pool growth mid-song.
+        private bool _needNoteNormalize;
+        private bool _needUiNormalize;
+        private float _normalizeTimer;
+        private const float NormalizeInterval = 10f;
+
         public override void OnInitializeMelon()
         {
             _cfg = MelonPreferences.CreateCategory("SynthCamera2");
@@ -222,7 +246,7 @@ namespace SynthCamera2
 
             _cameraConfig = ConfigLoader.LoadOrCreate();
 
-            MelonLogger.Msg("SynthCamera2 0.6.3 loaded - " + CountEnabled()
+            MelonLogger.Msg("SynthCamera2 0.7.1 loaded - " + CountEnabled()
                 + " camera(s) enabled. F9 reload config, F10 master toggle, "
                 + "F8 layer dump.");
         }
@@ -246,6 +270,18 @@ namespace SynthCamera2
                 {
                     _framesUntilRebuild = -1;
                     RebuildCameras();
+                }
+            }
+
+            // Note/rail pools can grow mid-song, spawning fresh Default-layer
+            // meshes; re-sweep periodically while a camera needs it.
+            if ((_needNoteNormalize || _needUiNormalize) && _cameras.Count > 0)
+            {
+                _normalizeTimer += Time.unscaledDeltaTime;
+                if (_normalizeTimer >= NormalizeInterval)
+                {
+                    _normalizeTimer = 0f;
+                    RunLayerNormalization("periodic");
                 }
             }
 
@@ -387,6 +423,39 @@ namespace SynthCamera2
 
             WarnOverlappingViewports();
             _grab.NotifyCamerasRebuilt();
+
+            _needNoteNormalize = false;
+            _needUiNormalize = false;
+            for (int i = 0; i < _cameras.Count; i++)
+            {
+                CameraDef d = _cameras[i].Def;
+                if (!d.ShowNotes)
+                    _needNoteNormalize = true;
+                if (!d.ShowUI)
+                    _needUiNormalize = true;
+            }
+            _normalizeTimer = 0f;
+            RunLayerNormalization("rebuild");
+        }
+
+        private void RunLayerNormalization(string reason)
+        {
+            try
+            {
+                int moved = 0;
+                if (_needNoteNormalize)
+                    moved += LayerNormalizer.NormalizeNotes();
+                if (_needUiNormalize)
+                    moved += LayerNormalizer.NormalizeUi();
+                if (moved > 0 && _debugLogging.Value)
+                    MelonLogger.Msg("Layer normalization (" + reason + "): "
+                        + moved + " object(s) moved off Default.");
+            }
+            catch (Exception ex)
+            {
+                if (_debugLogging.Value)
+                    MelonLogger.Warning("Layer normalization failed: " + ex.Message);
+            }
         }
 
         // The layer toggles "not working" report (15-07-2026) turned out to be

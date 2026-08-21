@@ -75,7 +75,7 @@ Edit `UserData/SynthCamera2/cameras.json`, then press F9 in-game. Each entry in
 | `SmoothRotation` | `4` | FirstPerson: rotation smoothing speed |
 | `ForceUpright` | `true` | FirstPerson: kill head roll, keep horizon level |
 | `Offset` | `[0,0,0]` | FirstPerson: offset from the head, in head-local space |
-| `ShowNotes` / `ShowWalls` / `ShowTrails` / `ShowAvatar` / `ShowHitParticles` / `ShowUI` | `true` | Per-camera visibility toggles |
+| `ShowNotes` / `ShowWalls` / `ShowTrails` / `ShowHitParticles` / `ShowUI` | `true` | Per-camera visibility toggles |
 | `ShowLayers` / `HideLayers` | `[]` | Explicit layer names to force-show/hide, applied after the toggles (`HideLayers` wins). Use the F8 dump to see layer names; useful ones: `"Controller Indicator"` (hit counters by your hands), `"Stage"` (tutorial/alert text) |
 | `PostProcessing` | `"Off"` | Bloom/tonemapping: `Off` (default), `Auto` (on unless `Chroma`), or `On`  |
 | `ClearMode` | `"Inherit"` | `Chroma` clears to a solid key color for MR foreground layers |
@@ -119,8 +119,7 @@ or `External` camera matching your physical camera's pose and FOV. In OBS:
 game feed on the bottom, your chroma-keyed camera video on top.
 
 **Foreground occlusion:** duplicate that camera, set `ClearMode: "Chroma"` and
-`FarClip` to your distance from the camera, with `ShowUI` and `ShowAvatar`
-off. Key this feed and stack it above your camera video — notes and rails
+`FarClip` to your distance from the camera, with `ShowUI` off. Key this feed and stack it above your camera video — notes and rails
 passing in front of you will occlude you.
 
 **Calibrated:** put an `externalcamera.cfg` (LIV / SteamVR MRC format) next to

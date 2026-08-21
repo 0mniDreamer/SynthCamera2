@@ -55,7 +55,6 @@ namespace SynthCamera2
         public bool ShowNotes { get; set; } = true;
         public bool ShowWalls { get; set; } = true;
         public bool ShowTrails { get; set; } = true;
-        public bool ShowAvatar { get; set; } = true;
         public bool ShowHitParticles { get; set; } = true;
         public bool ShowUI { get; set; } = true;
 
@@ -202,7 +201,6 @@ namespace SynthCamera2
             mr.ClearMode = "Chroma";
             mr.FarClip = 2.2f;
             mr.ShowUI = false;
-            mr.ShowAvatar = false;
             cfg.Cameras.Add(mr);
 
             // Calibrated MR pair: both read the same externalcamera.cfg, so
@@ -226,7 +224,6 @@ namespace SynthCamera2
             mrFg.ClearMode = "Chroma";
             mrFg.FarClip = 2.2f;
             mrFg.ShowUI = false;
-            mrFg.ShowAvatar = false;
             cfg.Cameras.Add(mrFg);
 
             return cfg;
