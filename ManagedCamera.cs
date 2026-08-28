@@ -45,7 +45,11 @@ namespace SynthCamera2
         private static readonly string[] HitParticlesLayers = new string[] { "HitParticles" };
         private static readonly string[] UiLayers = new string[]
         {
-            "UI", "ScoreUI", "StageUI", "ScoreUI MS", "StatusScoreData"
+            // "Controller Indicator" holds the score fly-off popups
+            // ("+Perfect/Good/Bad" numbers); confirmed by mask isolation
+            // 24-08-2026. StageUI/StatusScoreData hold the main score readout.
+            "UI", "ScoreUI", "StageUI", "ScoreUI MS", "StatusScoreData",
+            "Controller Indicator"
         };
 
         public ManagedCamera(CameraDef def)
@@ -657,6 +661,43 @@ namespace SynthCamera2
 
     public static class UrpUtil
     {
+        // Union of the layers occupied by enabled Volume objects in the
+        // scene: the ground-truth answer to "which volumeLayerMask reaches
+        // the post-processing volumes". Returns 0 on failure or none found.
+        private static int BuildVolumeMaskFromScene()
+        {
+            int mask = 0;
+            try
+            {
+                var vols = Resources.FindObjectsOfTypeAll<
+                    UnityEngine.Rendering.Volume>();
+                if (vols == null)
+                    return 0;
+                for (int i = 0; i < vols.Length; i++)
+                {
+                    var v = vols[i];
+                    if (v == null)
+                        continue;
+                    bool inScene = false;
+                    try { inScene = v.gameObject.scene.IsValid(); }
+                    catch (Exception) { }
+                    if (!inScene)
+                        continue;
+                    bool on = false;
+                    try { on = v.enabled && v.gameObject.activeInHierarchy; }
+                    catch (Exception) { }
+                    if (!on)
+                        continue;
+                    mask |= 1 << (v.gameObject.layer & 31);
+                }
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+            return mask;
+        }
+
         // Ensure UniversalAdditionalCameraData exists and is configured for a
         // desktop-only camera. Typed access validated on BOTH branches
         // (probe logs, 14-07-2026). allowXRRendering=false is belt-and-braces:
@@ -716,6 +757,31 @@ namespace SynthCamera2
 
                 data.allowXRRendering = false;
                 data.renderPostProcessing = postProcessing;
+
+                // v0.7.2 (24-08-2026): the game's "bloom: screen only" setting
+                // cuts the Headset Camera's volumeLayerMask -- and with the
+                // game display off, the headset IS our clone template, so the
+                // copied mask went dead and our cameras lost all post. When
+                // post-processing is ON, derive the mask from the volumes
+                // that actually exist in the scene and union it with the
+                // template's mask; the template can no longer starve us.
+                if (postProcessing)
+                {
+                    int copied = 0;
+                    try { copied = (int)data.volumeLayerMask; }
+                    catch (Exception) { }
+                    int fromScene = BuildVolumeMaskFromScene();
+                    int final = copied | fromScene;
+                    if (final == 0)
+                        final = -1; // last resort: Everything
+                    try { data.volumeLayerMask = final; }
+                    catch (Exception) { }
+                    if (debugLog)
+                        MelonLogger.Msg("[" + camName + "] volume mask: template=0x"
+                            + copied.ToString("X8") + " sceneVolumes=0x"
+                            + fromScene.ToString("X8") + " final=0x"
+                            + final.ToString("X8"));
+                }
 
                 // v0.6.3 (18-08-2026): renderPostProcessing=false was set but
                 // bloom still rendered on the Unity 6 branch (field log,
