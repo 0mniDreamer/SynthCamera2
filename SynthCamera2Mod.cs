@@ -4,12 +4,31 @@ using System.Text;
 using MelonLoader;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.7.1", "OmniDreamer")]
+[assembly: MelonInfo(typeof(SynthCamera2.SynthCamera2Mod), "SynthCamera2", "0.7.3", "OmniDreamer")]
 [assembly: MelonGame(null, null)]
 
 namespace SynthCamera2
 {
-    // SynthCamera2 v0.7.1 (19-08-2026)
+    // SynthCamera2 v0.7.3 (24-08-2026)
+    //
+    // v0.7.3 changes:
+    //   - ShowUI now also hides the score fly-off popups
+    //     ("+Perfect/Good/Bad" numbers). They render on the
+    //     "Controller Indicator" layer (confirmed by culling-mask isolation,
+    //     24-08-2026), which was missing from the UI hide set -- so
+    //     ShowUI:false hid the main readout but not the fly-offs. With that
+    //     layer added, ShowUI:false hides the whole score system on a camera.
+    //     No new options; existing HideLayers still works for anything else.
+    //
+    // v0.7.2 changes:
+    //   - FIX: setting the game's bloom to "screen only" killed ALL post
+    //     processing on mod cameras. The game cuts the Headset Camera's
+    //     volumeLayerMask in that mode, and with the game display off the
+    //     headset is our clone template -- so the copied mask went dead.
+    //     PP-On cameras now union the template mask with a mask built from
+    //     the Volume objects actually present in the scene (Everything as a
+    //     last resort), so the template can no longer starve them of post.
+    //     PP-Off behaviour (zeroed mask) is unchanged.
     //
     // v0.7.1 changes:
     //   - ShowAvatar option removed. Existing cameras.json files with the
@@ -246,7 +265,7 @@ namespace SynthCamera2
 
             _cameraConfig = ConfigLoader.LoadOrCreate();
 
-            MelonLogger.Msg("SynthCamera2 0.7.1 loaded - " + CountEnabled()
+            MelonLogger.Msg("SynthCamera2 0.7.3 loaded - " + CountEnabled()
                 + " camera(s) enabled. F9 reload config, F10 master toggle, "
                 + "F8 layer dump.");
         }

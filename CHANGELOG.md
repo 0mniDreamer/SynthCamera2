@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.7.3
+- `ShowUI` now also hides the score fly-off popups (the "+Perfect/Good/Bad"
+  numbers). They render on the "Controller Indicator" layer, which was not in
+  the UI hide set, so `ShowUI: false` previously hid the main score readout
+  but left the fly-offs. With that layer included, `ShowUI: false` hides the
+  whole score system on a camera.
+
+## 0.7.2
+- Fixed the game's "bloom: screen only" setting removing all post-processing
+  from mod cameras. Cameras with post-processing enabled now derive their
+  post-processing volume mask from the volumes actually present in the
+  scene, combined with the template camera's mask, instead of trusting the
+  template alone.
+
 ## 0.7.1
 - Removed the `ShowAvatar` option. Existing configs containing the field
   still load (the field is ignored). To hide avatar layers on a camera, use
@@ -34,7 +48,7 @@
   off for Chroma — the previous behavior), `"On"`, or `"Off"`.
 
 ## 0.6.0 
-- Update to the Input System package only, which silently killed the F8/F9/F10
+- Game update compatibility: Update to the Input System package only, which silently killed the F8/F9/F10
   hotkeys and added per-frame exception cost. All keyboard reads now go
   through a probe-once backend (`KeyInput`): legacy Input where it still
   works (Unity 2021 branch), the Input System package via reflection where

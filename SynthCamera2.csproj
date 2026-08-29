@@ -6,7 +6,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>SynthCamera2</AssemblyName>
     <RootNamespace>SynthCamera2</RootNamespace>
-    <Version>0.7.1</Version>
+    <Version>0.7.3</Version>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <!-- Override with: dotnet build -p:GamePath="C:\path\to\SynthRiders" -->
@@ -44,6 +44,11 @@
     <!-- v0.4: XR InputDevices for grab-and-place -->
     <Reference Include="UnityEngine.XRModule">
       <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\UnityEngine.XRModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- v0.7.2: UnityEngine.Rendering.Volume for scene-volume mask -->
+    <Reference Include="Unity.RenderPipelines.Core.Runtime">
+      <HintPath>$(GamePath)\MelonLoader\Il2CppAssemblies\Unity.RenderPipelines.Core.Runtime.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Runtime">
